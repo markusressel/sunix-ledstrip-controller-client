@@ -60,22 +60,32 @@ class UpdateColorRequest(Struct):
 
                          "unused_payload" / Int8ub,
 
-                         "unknown" / Int8ub,
+                         "set_warm_white" / Int8ub,
 
                          "remote_or_local" / Int8ub,
 
                          "checksum" / Int8ub)
 
-    def get_data(self, red: int, green: int, blue: int, warm_white: int):
+    def get_rgb_data(self, red: int, green: int, blue: int):
         params = dict(packet_id=0x31,
                       red=red,
                       green=green,
                       blue=blue,
-                      warm_white=warm_white,
+                      warm_white=0,
                       unused_payload=0,
-                      unknown=0xF0,
+                      set_warm_white=0xF0,
                       remote_or_local=0x0F,
                       checksum=0)
+
+        checksum = calculate_checksum(params)
+        params["checksum"] = checksum
+
+        return self.build(params)
+
+    def get_ww_data(self, warm_white: int):
+        params = self.get_rgb_data(0, 0, 0)
+        params["warm_white"] = warm_white
+        params["set_warm_white"] = 0x0F
 
         checksum = calculate_checksum(params)
         params["checksum"] = checksum

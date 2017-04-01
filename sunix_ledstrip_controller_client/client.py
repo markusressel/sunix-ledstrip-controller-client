@@ -96,11 +96,36 @@ class LEDStripControllerClient:
         :param red: red intensity (0..255)
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
+        :param warm_white: warm_white: warm white intensity (0..255)
+        """
+        self.set_rgb(controller, red, green, blue)
+        self.set_ww(controller, warm_white)
+
+    def set_rgb(self, controller: Controller, red: int, green: int, blue: int) -> None:
+        """
+        Sets rgbw values for the specified controller.
+        
+        :param controller: the controller to set the specified values on 
+        :param red: red intensity (0..255)
+        :param green: green intensity (0..255)
+        :param blue: blue intensity (0..255)
+        """
+
+        request = UpdateColorRequest()
+        data = request.get_rgb_data(red, green, blue)
+
+        self._send_data(controller.get_host(), controller.get_port(), data)
+
+    def set_ww(self, controller: Controller, warm_white: int) -> None:
+        """
+        Sets warm white value for the specified controller.
+
+        :param controller: the controller to set the specified values on 
         :param warm_white: warm white intensity (0..255)
         """
 
         request = UpdateColorRequest()
-        data = request.get_data(red, green, blue, warm_white)
+        data = request.get_ww_data(warm_white)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
 
