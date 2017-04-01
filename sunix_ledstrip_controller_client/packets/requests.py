@@ -83,9 +83,15 @@ class UpdateColorRequest(Struct):
         return self.build(params)
 
     def get_ww_data(self, warm_white: int):
-        params = self.get_rgb_data(0, 0, 0)
-        params["warm_white"] = warm_white
-        params["set_warm_white"] = 0x0F
+        params = dict(packet_id=0x31,
+                      red=0,
+                      green=0,
+                      blue=0,
+                      warm_white=warm_white,
+                      unused_payload=0,
+                      set_warm_white=0x0F,
+                      remote_or_local=0x0F,
+                      checksum=0)
 
         checksum = calculate_checksum(params)
         params["checksum"] = checksum
