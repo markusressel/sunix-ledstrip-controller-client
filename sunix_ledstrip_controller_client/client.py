@@ -5,6 +5,7 @@ import socket
 from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
 from sunix_ledstrip_controller_client.controller import Controller
+from sunix_ledstrip_controller_client.packets.requests import SetPowerRequest, UpdateColorRequest
 
 
 class LEDStripControllerClient:
@@ -20,14 +21,14 @@ class LEDStripControllerClient:
         Creates a new client object
         """
 
-    def discover_devices(self) -> [Controller]:
+    def discover_controllers(self) -> [Controller]:
         """
         Sends a broadcast message to the local network.
         Listening devices will respond to this broadcast with their self description
         
         :return: a list of devices
         """
-        discovered_devices = []
+        discovered_controllers = []
 
         cs = socket.socket(AF_INET, SOCK_DGRAM)
         cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -39,7 +40,7 @@ class LEDStripControllerClient:
         cs.settimeout(1)
 
         try:
-            # TODO: allow multiple device detection
+            # TODO: allow multiple controller detection
 
             data, address = cs.recvfrom(4096)
             # print("Received message: \"%s\"" % data)
@@ -56,48 +57,61 @@ class LEDStripControllerClient:
                 hw_id = data[1]
                 model = data[2]
 
-                device = Controller(ip, Controller.DEFAULT_PORT, hw_id, model)
-                print(device)
+                controller = Controller(ip, Controller.DEFAULT_PORT, hw_id, model)
+                print(controller)
 
-                discovered_devices.append(device)
-                return discovered_devices
+                discovered_controllers.append(controller)
+                return discovered_controllers
 
         except socket.timeout:
-            return discovered_devices
+            return discovered_controllers
 
-    def turn_on(self, device: Controller) -> None:
+    def turn_on(self, controller: Controller) -> None:
         """
-        Turns on the given device
-        :param: the device to turn on
-        """
-
-        self.send_packet(device.get_host(), device.get_port(), "on")
-
-    def turn_off(self, device: Controller) -> None:
-        """
-        Turns on the given device
-        :param: the device to turn on
+        Turns on a controller
+        :param: the controller to turn on
         """
 
-        self.send_packet(device.get_host(), device.get_port(), "off")
+        request = SetPowerRequest()
+        data = request.get_data(True)
 
-    def send_packet(self, host: str, port: int, action: str) -> None:
+        self._send_data(controller.get_host(), controller.get_port(), data)
 
-        from construct import Struct, Int8ub
+    def turn_off(self, controller: Controller) -> None:
+        """
+        Turns on a controller
+        :param: the controller to turn on
+        """
 
-        format = Struct(
-            "packet_id" / Int8ub,
-            "power_status" / Int8ub,
-            "remote_or_local" / Int8ub,
-            "checksum" / Int8ub
-        )
+        request = SetPowerRequest()
+        data = request.get_data(False)
 
-        if action == "on":
-            data = format.build(dict(packet_id=0x71, power_status=0x23, remote_or_local=0x0F, checksum=0xa3))
-        else:
-            data = format.build(dict(packet_id=0x71, power_status=0x24, remote_or_local=0x0F, checksum=0xa4))
+        self._send_data(controller.get_host(), controller.get_port(), data)
 
-        print(data)
+    def set_rgbw(self, controller: Controller, red: int, green: int, blue: int, warm_white: int) -> None:
+        """
+        Sets rgbw values for the specified controller.
+        
+        :param controller: the controller to set the specified values on 
+        :param red: red intensity (0..255)
+        :param green: green intensity (0..255)
+        :param blue: blue intensity (0..255)
+        :param warm_white: warm white intensity (0..255)
+        """
+
+        request = UpdateColorRequest()
+        data = request.get_data(red, green, blue, warm_white)
+
+        self._send_data(controller.get_host(), controller.get_port(), data)
+
+    def _send_data(self, host: str, port: int, data) -> None:
+        """
+        Sends a binary data request to the specified host and port.
+        
+        :param host: destination host
+        :param port: destination port
+        :param data: the binary(!) data to send
+        """
 
         try:
             s = socket.socket()
