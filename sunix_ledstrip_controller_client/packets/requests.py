@@ -60,6 +60,8 @@ class UpdateColorRequest(Struct):
 
                          "unused_payload" / Int8ub,
 
+                         "unknown" / Int8ub,
+
                          "remote_or_local" / Int8ub,
 
                          "checksum" / Int8ub)
@@ -71,12 +73,11 @@ class UpdateColorRequest(Struct):
                       blue=blue,
                       warm_white=warm_white,
                       unused_payload=0,
+                      unknown=0xF0,
                       remote_or_local=0x0F,
                       checksum=0)
 
         checksum = calculate_checksum(params)
         params["checksum"] = checksum
-
-        print(checksum)
 
         return self.build(params)
