@@ -41,6 +41,8 @@ class SetPowerRequest(Struct):
 
             # this value specifies if the gateway is accessible locally or remotely
             # the remote value is only used by the official app
+            # 0x0F for local
+            # 0xF0 for remote
             "remote_or_local" / Int8ub,
 
             # this is a checksum of the data packet
@@ -75,16 +77,20 @@ class UpdateColorRequest(Struct):
             "blue" / Int8ub,
             "warm_white" / Int8ub,
 
+            # this doesnt seem to do anything
             "unused_payload" / Int8ub,
 
             # this value specifies if only rgb, only ww or both values will be used
             # 0xF0 will only update rgb
             # 0x0F will only update ww
             # 0xFF will update both
+            # 0x00 will ignore both (has no use afaik)
             "rgbw_selection" / Int8ub,
 
             # this value specifies if the gateway is accessible locally or remotely
             # the remote value is only used by the official app
+            # 0x0F for local
+            # 0xF0 for remote
             "remote_or_local" / Int8ub,
 
             # this is a checksum of the data packet
