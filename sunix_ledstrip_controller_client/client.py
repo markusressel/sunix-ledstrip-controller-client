@@ -89,19 +89,21 @@ class LEDStripControllerClient:
 
         self._send_data(controller.get_host(), controller.get_port(), data)
 
-    def set_rgbw(self, controller: Controller, red: int, green: int, blue: int, warm_white: int) -> None:
+    def set_rgbww(self, controller: Controller, red: int, green: int, blue: int, warm_white: int,
+                  cold_white: int) -> None:
         """
-        Sets rgbw values for the specified controller.
+        Sets rgbww values for the specified controller.
         
         :param controller: the controller to set the specified values on 
         :param red: red intensity (0..255)
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
         :param warm_white: warm_white: warm white intensity (0..255)
+        :param cold_white: cold white intensity (0..255)
         """
 
         request = UpdateColorRequest()
-        data = request.get_rgbw_data(red, green, blue, warm_white)
+        data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
 
@@ -118,18 +120,23 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
 
+        print(data)
+
         self._send_data(controller.get_host(), controller.get_port(), data)
 
-    def set_ww(self, controller: Controller, warm_white: int) -> None:
+    def set_ww(self, controller: Controller, warm_white: int, cold_white: int) -> None:
         """
         Sets warm white value for the specified controller.
 
         :param controller: the controller to set the specified values on 
         :param warm_white: warm white intensity (0..255)
+        :param cold_white: cold white intensity (0..255)
         """
 
         request = UpdateColorRequest()
-        data = request.get_ww_data(warm_white)
+        data = request.get_ww_data(warm_white, cold_white)
+
+        print(data)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
 
@@ -157,4 +164,4 @@ class LEDStripControllerClient:
             print(data)
 
         except socket.timeout:
-            pass
+            print("timeout")

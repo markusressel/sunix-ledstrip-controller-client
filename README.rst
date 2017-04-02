@@ -71,7 +71,7 @@ and this to turn it off:
 Make it a rainbow (changing colors)
 -----------------------------------
 
-Now to the fun part. The RGB values and the WW (warm white) value can be adjusted
+Now to the fun part. The RGB values and the WW (warm white and cold white) value can be adjusted
 separately (while keeping the other value) or both at the same time.
 
 All values have a valid range of :code:`0` to :code:`255`.
@@ -86,13 +86,13 @@ and this one if you only want to change the WW value:
 
 .. code-block:: python
 
-    api.set_ww(device, 255)
+    api.set_ww(device, 255, 255)
 
 To set both at the same time use (you guessed it):
 
 .. code-block:: python
 
-    api.set_rgbw(device, 255, 255, 255, 255)
+    api.set_rgbww(device, 255, 255, 255, 255, 255)
 
 Functions
 ---------
@@ -135,3 +135,4 @@ License
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+

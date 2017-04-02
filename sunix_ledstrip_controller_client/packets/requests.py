@@ -14,9 +14,7 @@ def _calculate_checksum(params: dict) -> int:
         if param == "checksum":
             continue
 
-        # sum up all packet values
         checksum += params[param]
-        # and make sure they fit in an 8 bit integer
         checksum = checksum % 0x100
 
     print("checksum: " + hex(checksum))
@@ -76,16 +74,14 @@ class UpdateColorRequest(Struct):
             "green" / Int8ub,
             "blue" / Int8ub,
             "warm_white" / Int8ub,
-
-            # this doesnt seem to do anything
-            "unused_payload" / Int8ub,
+            "cold_white" / Int8ub,
 
             # this value specifies if only rgb, only ww or both values will be used
             # 0xF0 will only update rgb
             # 0x0F will only update ww
             # 0xFF will update both
             # 0x00 will ignore both (has no use afaik)
-            "rgbw_selection" / Int8ub,
+            "rgbww_selection" / Int8ub,
 
             # this value specifies if the gateway is accessible locally or remotely
             # the remote value is only used by the official app
@@ -97,14 +93,14 @@ class UpdateColorRequest(Struct):
             "checksum" / Int8ub
         )
 
-    def get_rgbw_data(self, red: int, green: int, blue: int, warm_white: int):
+    def get_rgbww_data(self, red: int, green: int, blue: int, warm_white: int, cold_white: int):
         params = dict(packet_id=0x31,
                       red=red,
                       green=green,
                       blue=blue,
                       warm_white=warm_white,
-                      unused_payload=0,
-                      rgbw_selection=0xFF,
+                      cold_white=cold_white,
+                      rgbww_selection=0xFF,
                       remote_or_local=0x0F,
                       checksum=0)
 
@@ -119,8 +115,8 @@ class UpdateColorRequest(Struct):
                       green=green,
                       blue=blue,
                       warm_white=0,
-                      unused_payload=0,
-                      rgbw_selection=0xF0,
+                      cold_white=0,
+                      rgbww_selection=0xF0,
                       remote_or_local=0x0F,
                       checksum=0)
 
@@ -129,14 +125,14 @@ class UpdateColorRequest(Struct):
 
         return self.build(params)
 
-    def get_ww_data(self, warm_white: int):
+    def get_ww_data(self, warm_white: int, cold_white: int):
         params = dict(packet_id=0x31,
                       red=0,
                       green=0,
                       blue=0,
                       warm_white=warm_white,
-                      unused_payload=0,
-                      rgbw_selection=0x0F,
+                      cold_white=cold_white,
+                      rgbww_selection=0x0F,
                       remote_or_local=0x0F,
                       checksum=0)
 
