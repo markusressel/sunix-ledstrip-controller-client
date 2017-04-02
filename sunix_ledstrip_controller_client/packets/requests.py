@@ -1,25 +1,33 @@
 from construct import Struct, Int8ub
 
+from sunix_ledstrip_controller_client.packets import _calculate_checksum
 
-def _calculate_checksum(params: dict) -> int:
+
+class StatusRequest(Struct):
     """
-    Calculates the checksum for a request
-    
-    :param params: request data 
-    :return: checksum
+    Request for the current status of the controller
     """
 
-    checksum = 0
-    for param in params:
-        if param == "checksum":
-            continue
+    def __init__(self):
+        super().__init__(
+            "packet_id" / Int8ub,
 
-        checksum += params[param]
-        checksum = checksum % 0x100
+            "payload1" / Int8ub,
+            "payload2" / Int8ub,
 
-    print("checksum: " + hex(checksum))
+            "checksum" / Int8ub
+        )
 
-    return checksum
+    def get_data(self) -> dict:
+        params = dict(packet_id=0x81,
+                      payload1=0x8A,
+                      payload2=0x8B,
+                      checksum=0)
+
+        checksum = _calculate_checksum(params)
+        params["checksum"] = checksum
+
+        return self.build(params)
 
 
 class SetPowerRequest(Struct):
@@ -47,11 +55,11 @@ class SetPowerRequest(Struct):
             "checksum" / Int8ub
         )
 
-    def get_data(self, on: bool):
+    def get_data(self, on: bool) -> dict:
         params = dict(packet_id=0x71,
                       power_status=0x23 if on else 0x24,
                       remote_or_local=0x0F,
-                      checksum=0xa3)
+                      checksum=0)
 
         checksum = _calculate_checksum(params)
         params["checksum"] = checksum
@@ -93,7 +101,7 @@ class UpdateColorRequest(Struct):
             "checksum" / Int8ub
         )
 
-    def get_rgbww_data(self, red: int, green: int, blue: int, warm_white: int, cold_white: int):
+    def get_rgbww_data(self, red: int, green: int, blue: int, warm_white: int, cold_white: int) -> dict:
         params = dict(packet_id=0x31,
                       red=red,
                       green=green,
@@ -109,7 +117,7 @@ class UpdateColorRequest(Struct):
 
         return self.build(params)
 
-    def get_rgb_data(self, red: int, green: int, blue: int):
+    def get_rgb_data(self, red: int, green: int, blue: int) -> dict:
         params = dict(packet_id=0x31,
                       red=red,
                       green=green,
@@ -125,7 +133,7 @@ class UpdateColorRequest(Struct):
 
         return self.build(params)
 
-    def get_ww_data(self, warm_white: int, cold_white: int):
+    def get_ww_data(self, warm_white: int, cold_white: int) -> dict:
         params = dict(packet_id=0x31,
                       red=0,
                       green=0,

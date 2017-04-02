@@ -5,7 +5,10 @@ import socket
 from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
 from sunix_ledstrip_controller_client.controller import Controller
-from sunix_ledstrip_controller_client.packets.requests import SetPowerRequest, UpdateColorRequest
+from sunix_ledstrip_controller_client.packets.requests import (
+    StatusRequest, SetPowerRequest, UpdateColorRequest)
+from sunix_ledstrip_controller_client.packets.responses import (
+    StatusResponse)
 
 
 class LEDStripControllerClient:
@@ -67,6 +70,31 @@ class LEDStripControllerClient:
         except socket.timeout:
             return discovered_controllers
 
+    def update_state(self, controller: Controller) -> None:
+        """
+        Updates the state of the passed in controller
+        
+        :param controller: the controller to update 
+        """
+
+        request = StatusRequest()
+        data = request.get_data()
+
+        response_data = self._send_data(controller.get_host(), controller.get_port(), data)
+
+        # parse and check validity of response data
+        status_response = StatusResponse(response_data).get_response()
+
+        # update the controller values from the response
+        controller._power_state = status_response["power_status"]
+        controller._rgbww = [
+            status_response["red"],
+            status_response["green"],
+            status_response["blue"],
+            status_response["warm_white"],
+            status_response["cold_white"]
+        ]
+
     def turn_on(self, controller: Controller) -> None:
         """
         Turns on a controller
@@ -77,6 +105,7 @@ class LEDStripControllerClient:
         data = request.get_data(True)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
+        self.update_state(controller)
 
     def turn_off(self, controller: Controller) -> None:
         """
@@ -88,6 +117,7 @@ class LEDStripControllerClient:
         data = request.get_data(False)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
+        self.update_state(controller)
 
     def set_rgbww(self, controller: Controller, red: int, green: int, blue: int, warm_white: int,
                   cold_white: int) -> None:
@@ -106,6 +136,7 @@ class LEDStripControllerClient:
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
+        self.update_state(controller)
 
     def set_rgb(self, controller: Controller, red: int, green: int, blue: int) -> None:
         """
@@ -120,9 +151,8 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
 
-        print(data)
-
         self._send_data(controller.get_host(), controller.get_port(), data)
+        self.update_state(controller)
 
     def set_ww(self, controller: Controller, warm_white: int, cold_white: int) -> None:
         """
@@ -136,12 +166,11 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
 
-        print(data)
-
         self._send_data(controller.get_host(), controller.get_port(), data)
+        self.update_state(controller)
 
     @staticmethod
-    def _send_data(host: str, port: int, data) -> None:
+    def _send_data(host: str, port: int, data) -> bytearray:
         """
         Sends a binary data request to the specified host and port.
         
@@ -161,7 +190,7 @@ class LEDStripControllerClient:
 
             data = s.recv(2048)
 
-            print(data)
+            return data
 
         except socket.timeout:
             print("timeout")

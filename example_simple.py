@@ -8,4 +8,6 @@ device = Controller("192.168.2.23")
 
 api.turn_on(device)
 
-api.set_rgbww(device, 255, 0, 0, 125, 0)
+api.set_rgbww(device, 255, 255, 255, 255, 255)
+
+api.update_state(device)

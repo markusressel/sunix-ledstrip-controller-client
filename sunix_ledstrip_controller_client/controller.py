@@ -3,6 +3,9 @@ class Controller:
     Device class that represents a single controller
     """
 
+    POWER_STATE_ON = 0x23
+    POWER_STATE_OFF = 0x24
+
     DEFAULT_PORT = 5577
 
     def __init__(self, host: str, port: int = DEFAULT_PORT, hardware_id: str = None, model: str = None):
@@ -20,6 +23,8 @@ class Controller:
             self._port = port
         self._hardware_id = hardware_id
         self._model = model
+        self._power_state = None
+        self._rgbww = [0, 0, 0, 0, 0]
 
     def __str__(self):
         return ("Host: " + self.get_host() + "\n" +
@@ -50,3 +55,15 @@ class Controller:
         :return: The model of this device 
         """
         return self._model
+
+    def is_on(self) -> bool:
+        """
+        :return: True if the controller is turned on, false otherwise 
+        """
+        return self._power_state is self.POWER_STATE_ON
+
+    def get_rgbww(self) -> [int, int, int, int, int]:
+        """
+        :return: the RGB color values 
+        """
+        return self._rgbww
