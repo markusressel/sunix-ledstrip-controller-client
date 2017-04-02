@@ -74,6 +74,8 @@ Make it a rainbow (changing colors)
 Now to the fun part. The RGB values and the WW (warm white) value can be adjusted
 separately (while keeping the other value) or both at the same time.
 
+All values have a valid range of :code:`0` to :code:`255`.
+
 If you only want to change the RGB values use:
 
 .. code-block:: python
@@ -106,6 +108,12 @@ I want to give a huge shoutout to `Chris Mullins (alias sidoh) <https://github.c
 `ledenet_api <https://github.com/sidoh/ledenet_api>`_ library. Although the protocol used by the sunix controller
 is not exactly the same to the one used by the LEDENET Magic UFO controller it's quite similar and his work was a
 great starting point for me.
+
+Contributing
+============
+
+Github is for social coding: if you want to write code, I encourage contributions through pull requests from forks
+of this repository. Create Github tickets for bugs and new features and comment on the ones that you are interested in.
 
 License
 =======
