@@ -18,10 +18,10 @@ For a basic example have a look at the `example.py <https://github.com/markusres
 If you need more info have a look at the `documentation <http://sunix-ledstrip-controller-client.readthedocs.io/>`_ which should help.
 
 Basic Example
--------------
+=============
 
 Create the :code:`LEDStripControllerClient` object
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------------------
 
 The first thing you need to communicate with any controller is the api client.
 Create one like this:
@@ -49,7 +49,7 @@ or including a port if you want to access it from outside of your local network:
     device = Controller("192.168.2.23", 12345)
 
 Turn it on!
-^^^^^^^^^^^
+-----------
 
 Now you have all that is needed to control your device. It's time to turn it on and off!
 Use this method to turn it on:
@@ -63,7 +63,7 @@ and this to turn it off:
     api.turn_off(device)
 
 Make it a rainbow (changing colors)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------
 
 Now to the fun part. The RGB values and the WW (warm white) value can be adjusted
 separately (while keeping the other value) or both at the same time.
@@ -84,7 +84,7 @@ To set both at the same time use (you guessed it):
     api.set_rgbw(device, 255, 255, 255, 255)
 
 Functions
-^^^^^^^^^
+---------
 
 The official app for the Sunix controller offers 20 different functions that can be activated and customized in speed.
 Those are currently not supported by this library but this might change in the future.
