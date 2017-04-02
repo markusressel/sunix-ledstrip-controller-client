@@ -67,3 +67,14 @@ class Controller:
         :return: the RGB color values 
         """
         return self._rgbww
+
+    def get_brightness(self) -> int:
+        """
+        Note: this value is calculated in the library and not on the device
+        :return: the brightness of the controller [0..255] 
+        """
+        brightness = 0
+        for color in self._rgbww:
+            brightness += color
+
+        return int(brightness / len(self._rgbww))
