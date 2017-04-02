@@ -34,6 +34,7 @@ class LEDStripControllerClient:
         cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
+        # send a local broadcast via udp with a "magic packet"
         cs.sendto(self._discovery_message, ('255.255.255.255', self._discovery_port))
 
         cs.setblocking(True)
@@ -132,7 +133,8 @@ class LEDStripControllerClient:
 
         self._send_data(controller.get_host(), controller.get_port(), data)
 
-    def _send_data(self, host: str, port: int, data) -> None:
+    @staticmethod
+    def _send_data(host: str, port: int, data) -> None:
         """
         Sends a binary data request to the specified host and port.
         
