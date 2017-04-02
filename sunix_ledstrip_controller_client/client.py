@@ -54,13 +54,17 @@ class LEDStripControllerClient:
 
             # print(message)
 
+            # parse received message
             data = str.split(message, ",")
 
+            # check validity
             if len(data) == 3:
+                # extract data
                 ip = data[0]
                 hw_id = data[1]
                 model = data[2]
 
+                # create a Controller object representation
                 controller = Controller(ip, Controller.DEFAULT_PORT, hw_id, model)
                 print(controller)
 
@@ -80,7 +84,7 @@ class LEDStripControllerClient:
         request = StatusRequest()
         data = request.get_data()
 
-        response_data = self._send_data(controller.get_host(), controller.get_port(), data)
+        response_data = self._send_data(controller.get_host(), controller.get_port(), data, True)
 
         # parse and check validity of response data
         status_response = StatusResponse(response_data).get_response()
@@ -119,8 +123,8 @@ class LEDStripControllerClient:
         self._send_data(controller.get_host(), controller.get_port(), data)
         self.update_state(controller)
 
-    def set_rgbww(self, controller: Controller, red: int, green: int, blue: int, warm_white: int,
-                  cold_white: int) -> None:
+    def set_rgbww(self, controller: Controller, red: int, green: int, blue: int,
+                  warm_white: int, cold_white: int) -> None:
         """
         Sets rgbww values for the specified controller.
         
@@ -170,7 +174,7 @@ class LEDStripControllerClient:
         self.update_state(controller)
 
     @staticmethod
-    def _send_data(host: str, port: int, data) -> bytearray:
+    def _send_data(host: str, port: int, data, wait_for_response: bool = False) -> bytearray or None:
         """
         Sends a binary data request to the specified host and port.
         
@@ -185,12 +189,15 @@ class LEDStripControllerClient:
 
             s.send(data)
 
-            s.setblocking(True)
-            s.settimeout(1)
+            if wait_for_response:
+                s.setblocking(True)
+                s.settimeout(1)
 
-            data = s.recv(2048)
+                data = s.recv(2048)
 
-            return data
+                return data
+            else:
+                return None
 
         except socket.timeout:
             print("timeout")

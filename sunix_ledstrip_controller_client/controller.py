@@ -24,7 +24,7 @@ class Controller:
         self._hardware_id = hardware_id
         self._model = model
         self._power_state = None
-        self._rgbww = [0, 0, 0, 0, 0]
+        self._rgbww = None
 
     def __str__(self):
         return ("Host: " + self.get_host() + "\n" +
@@ -32,7 +32,7 @@ class Controller:
                 "Hardware ID: " + self.get_hardware_id() + "\n" +
                 "Model: " + self.get_model())
 
-    def get_host(self) -> str:
+    def get_host(self) -> str or None:
         """
         :return: The IP/Host address of this device  
         """
@@ -44,13 +44,13 @@ class Controller:
         """
         return self._port
 
-    def get_hardware_id(self) -> str:
+    def get_hardware_id(self) -> str or None:
         """
         :return: The hardware ID of this device (f.ex. 'F0FE6B2333C6') 
         """
         return self._hardware_id
 
-    def get_model(self) -> str:
+    def get_model(self) -> str or None:
         """
         :return: The model of this device 
         """
@@ -58,21 +58,24 @@ class Controller:
 
     def is_on(self) -> bool:
         """
-        :return: True if the controller is turned on, false otherwise 
+        :return: True if the controller is turned on, false otherwise
         """
         return self._power_state is self.POWER_STATE_ON
 
-    def get_rgbww(self) -> [int, int, int, int, int]:
+    def get_rgbww(self) -> [int, int, int, int, int] or None:
         """
-        :return: the RGB color values 
+        :return: the RGB color values
         """
         return self._rgbww
 
-    def get_brightness(self) -> int:
+    def get_brightness(self) -> int or None:
         """
         Note: this value is calculated in the library and not on the device
-        :return: the brightness of the controller [0..255] 
+        :return: the brightness of the controller [0..255] or -1 if no value is set
         """
+        if not self._rgbww:
+            return None
+
         brightness = 0
         for color in self._rgbww:
             brightness += color

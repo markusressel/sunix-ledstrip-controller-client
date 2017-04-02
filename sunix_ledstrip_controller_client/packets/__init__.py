@@ -27,7 +27,7 @@ def _evaluate_checksum(data: dict) -> bool:
     :return: True if the checksum is correct, false otherwise
     """
 
-    if not data["checksum"]:
+    if not data or not data["checksum"]:
         return False
 
     expected = _calculate_checksum(data)

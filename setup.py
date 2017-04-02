@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sunix_ledstrip_controller_client',
-    version='0.1.0',
+    version='1.0.0',
     description='A library for controlling the Sunix® RGB / RGBWWCW WiFi LED Strip controller',
     license='GPLv3+',
     author='Markus Ressel',

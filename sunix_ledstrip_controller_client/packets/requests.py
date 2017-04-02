@@ -19,6 +19,10 @@ class StatusRequest(Struct):
         )
 
     def get_data(self) -> dict:
+        """
+        Generates a binary data packet containing the a request for the current state of the controller
+        :return: binary data packet
+        """
         params = dict(packet_id=0x81,
                       payload1=0x8A,
                       payload2=0x8B,
@@ -56,8 +60,16 @@ class SetPowerRequest(Struct):
         )
 
     def get_data(self, on: bool) -> dict:
+        """
+        Generates a binary data packet containing the request to change the power state of the controller
+
+        :param on: True if the controller should turn on, False for turning off
+        :return: binary data packet
+        """
+
+        from sunix_ledstrip_controller_client.controller import Controller
         params = dict(packet_id=0x71,
-                      power_status=0x23 if on else 0x24,
+                      power_status=Controller.POWER_STATE_ON if on else Controller.POWER_STATE_OFF,
                       remote_or_local=0x0F,
                       checksum=0)
 
@@ -102,6 +114,16 @@ class UpdateColorRequest(Struct):
         )
 
     def get_rgbww_data(self, red: int, green: int, blue: int, warm_white: int, cold_white: int) -> dict:
+        """
+        Generates a binary data packet containing the request to change colors for all 5 channels
+        
+        :param red: red amount 
+        :param green: green amount 
+        :param blue: blue amount
+        :param warm_white: warm white amount 
+        :param cold_white: cold white amount
+        :return: binary data packet
+        """
         params = dict(packet_id=0x31,
                       red=red,
                       green=green,
@@ -118,6 +140,15 @@ class UpdateColorRequest(Struct):
         return self.build(params)
 
     def get_rgb_data(self, red: int, green: int, blue: int) -> dict:
+        """
+        Generates a binary data packet containing the request to change rgb colors
+
+        :param red: red amount 
+        :param green: green amount 
+        :param blue: blue amount
+        :return: binary data packet
+        """
+
         params = dict(packet_id=0x31,
                       red=red,
                       green=green,
@@ -134,6 +165,14 @@ class UpdateColorRequest(Struct):
         return self.build(params)
 
     def get_ww_data(self, warm_white: int, cold_white: int) -> dict:
+        """
+        Generates a binary data packet containing the request to change ww colors
+
+        :param warm_white: warm white amount 
+        :param cold_white: cold white amount
+        :return: binary data packet
+        """
+
         params = dict(packet_id=0x31,
                       red=0,
                       green=0,
