@@ -3,6 +3,12 @@ sunix-ledstrip-controller-client
 
 A python library for controlling the Sunix® RGB / RGBWWCW WiFi LED Strip controller.
 
+Build Status
+============
+
+.. image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=master
+:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client
+
 How to use
 ==========
 
