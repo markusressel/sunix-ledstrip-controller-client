@@ -5,7 +5,7 @@ from sunix_ledstrip_controller_client.controller import Controller
 
 
 class TestStringMethods(unittest.TestCase):
-    def create_api(self):
+    def test_create_api(self):
         """
         Creates the api and object
         """
@@ -13,7 +13,7 @@ class TestStringMethods(unittest.TestCase):
         api = LEDStripControllerClient()
         self.assertIsNotNone(api)
 
-    def create_controller(self):
+    def test_create_controller(self):
         """
         Creates a controller using default values
         :return: 
@@ -30,7 +30,7 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual(device.get_rgbww(), None)
         self.assertEqual(device.get_brightness(), None)
 
-    def create_controller_custom(self):
+    def test_create_controller_custom(self):
         """
         Creates a controller using default values
         :return: 
