@@ -1,7 +1,7 @@
 from construct import Struct, Int8ub
 
 
-def calculate_checksum(params: dict) -> int:
+def _calculate_checksum(params: dict) -> int:
     """
     Calculates the checksum for a request
     
@@ -14,7 +14,9 @@ def calculate_checksum(params: dict) -> int:
         if param == "checksum":
             continue
 
+        # sum up all packet values
         checksum += params[param]
+        # and make sure they fit in an 8 bit integer
         checksum = checksum % 0x100
 
     print("checksum: " + hex(checksum))
@@ -28,10 +30,22 @@ class SetPowerRequest(Struct):
     """
 
     def __init__(self):
-        super().__init__("packet_id" / Int8ub,
-                         "power_status" / Int8ub,
-                         "remote_or_local" / Int8ub,
-                         "checksum" / Int8ub)
+        super().__init__(
+            # this is the id of the action to perform
+            "packet_id" / Int8ub,
+
+            # this indicates the new power status (on/off)
+            # 0x23 for on
+            # 0x24 for off
+            "power_status" / Int8ub,
+
+            # this value specifies if the gateway is accessible locally or remotely
+            # the remote value is only used by the official app
+            "remote_or_local" / Int8ub,
+
+            # this is a checksum of the data packet
+            "checksum" / Int8ub
+        )
 
     def get_data(self, on: bool):
         params = dict(packet_id=0x71,
@@ -39,7 +53,7 @@ class SetPowerRequest(Struct):
                       remote_or_local=0x0F,
                       checksum=0xa3)
 
-        checksum = calculate_checksum(params)
+        checksum = _calculate_checksum(params)
         params["checksum"] = checksum
 
         return self.build(params)
@@ -51,20 +65,47 @@ class UpdateColorRequest(Struct):
     """
 
     def __init__(self):
-        super().__init__("packet_id" / Int8ub,
+        super().__init__(
+            # this is the id of the action to perform
+            "packet_id" / Int8ub,
 
-                         "red" / Int8ub,
-                         "green" / Int8ub,
-                         "blue" / Int8ub,
-                         "warm_white" / Int8ub,
+            # these are the color values
+            "red" / Int8ub,
+            "green" / Int8ub,
+            "blue" / Int8ub,
+            "warm_white" / Int8ub,
 
-                         "unused_payload" / Int8ub,
+            "unused_payload" / Int8ub,
 
-                         "set_warm_white" / Int8ub,
+            # this value specifies if only rgb, only ww or both values will be used
+            # 0xF0 will only update rgb
+            # 0x0F will only update ww
+            # 0xFF will update both
+            "rgbw_selection" / Int8ub,
 
-                         "remote_or_local" / Int8ub,
+            # this value specifies if the gateway is accessible locally or remotely
+            # the remote value is only used by the official app
+            "remote_or_local" / Int8ub,
 
-                         "checksum" / Int8ub)
+            # this is a checksum of the data packet
+            "checksum" / Int8ub
+        )
+
+    def get_rgbw_data(self, red: int, green: int, blue: int, warm_white: int):
+        params = dict(packet_id=0x31,
+                      red=red,
+                      green=green,
+                      blue=blue,
+                      warm_white=warm_white,
+                      unused_payload=0,
+                      rgbw_selection=0xFF,
+                      remote_or_local=0x0F,
+                      checksum=0)
+
+        checksum = _calculate_checksum(params)
+        params["checksum"] = checksum
+
+        return self.build(params)
 
     def get_rgb_data(self, red: int, green: int, blue: int):
         params = dict(packet_id=0x31,
@@ -73,11 +114,11 @@ class UpdateColorRequest(Struct):
                       blue=blue,
                       warm_white=0,
                       unused_payload=0,
-                      set_warm_white=0xF0,
+                      rgbw_selection=0xF0,
                       remote_or_local=0x0F,
                       checksum=0)
 
-        checksum = calculate_checksum(params)
+        checksum = _calculate_checksum(params)
         params["checksum"] = checksum
 
         return self.build(params)
@@ -89,11 +130,11 @@ class UpdateColorRequest(Struct):
                       blue=0,
                       warm_white=warm_white,
                       unused_payload=0,
-                      set_warm_white=0x0F,
+                      rgbw_selection=0x0F,
                       remote_or_local=0x0F,
                       checksum=0)
 
-        checksum = calculate_checksum(params)
+        checksum = _calculate_checksum(params)
         params["checksum"] = checksum
 
         return self.build(params)

@@ -29,7 +29,7 @@ api.turn_on(device)
 #
 # time.sleep(1)
 #
-# api.set_rgbw(device, 255, 255, 255)
+api.set_rgbw(device, 0, 255, 0, 255)
 
 
 # for device in devices:

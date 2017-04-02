@@ -10,7 +10,7 @@ from sunix_ledstrip_controller_client.packets.requests import SetPowerRequest, U
 
 class LEDStripControllerClient:
     """
-    THis class is the main interface for controlling all devices
+    This class is the main interface for controlling all devices
     """
 
     _discovery_port = 48899
@@ -98,8 +98,11 @@ class LEDStripControllerClient:
         :param blue: blue intensity (0..255)
         :param warm_white: warm_white: warm white intensity (0..255)
         """
-        self.set_rgb(controller, red, green, blue)
-        self.set_ww(controller, warm_white)
+
+        request = UpdateColorRequest()
+        data = request.get_rgbw_data(red, green, blue, warm_white)
+
+        self._send_data(controller.get_host(), controller.get_port(), data)
 
     def set_rgb(self, controller: Controller, red: int, green: int, blue: int) -> None:
         """
