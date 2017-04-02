@@ -27,6 +27,7 @@ The first thing you need to communicate with any controller is the api client.
 Create one like this:
 
 .. code-block:: python
+
     from sunix_ledstrip_controller_client import LEDStripControllerClient
 
     api = LEDStripControllerClient()
@@ -35,17 +36,20 @@ The next thing you need is a :code:`Controller` object that specifies the basics
 You can either let the api search automatically for your controller using:
 
 .. code-block:: python
+
     devices = api.discover_controllers()
 
 or create one manually like this:
 
 .. code-block:: python
+
     from sunix_ledstrip_controller_client.controller import Controller
     device = Controller("192.168.2.23")
 
 or including a port if you want to access it from outside of your local network:
 
 .. code-block:: python
+
     device = Controller("192.168.2.23", 12345)
 
 Turn it on!
@@ -55,11 +59,13 @@ Now you have all that is needed to control your device. It's time to turn it on 
 Use this method to turn it on:
 
 .. code-block:: python
+
     api.turn_on(device)
 
 and this to turn it off:
 
 .. code-block:: python
+
     api.turn_off(device)
 
 Make it a rainbow (changing colors)
@@ -71,16 +77,19 @@ separately (while keeping the other value) or both at the same time.
 If you only want to change the RGB values use:
 
 .. code-block:: python
+
     api.set_rgb(device, 255, 255, 255)
 
 and this one if you only want to change the WW value:
 
 .. code-block:: python
+
     api.set_ww(device, 255)
 
 To set both at the same time use (you guessed it):
 
 .. code-block:: python
+
     api.set_rgbw(device, 255, 255, 255, 255)
 
 Functions
