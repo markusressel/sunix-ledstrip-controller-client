@@ -104,8 +104,21 @@ Functions
 ---------
 
 The official app for the Sunix controller offers 20 different functions that can be activated and customized in speed.
-Those are currently not supported by this library but this might change in the future.
+These functions are hardcoded in the controller so they can not be altered in any way.
+You can activate them though using:
 
+.. code-block:: python
+
+    from sunix_ledstrip_controller_client.functions import FunctionId
+    api.set_function(device, FunctionId.RED_GRADUAL_CHANGE, 240)
+
+Function ids can be found in the :code:`FunctionId` enum class.
+
+**0 is slow - 255 is fast.**
+
+In the network protocol the speed is actually reversed (0 is fast, 255 is slow) but I changed this for the sake of simplicity.
+You should be aware though that the **speed curve seems to be exponential**. This means 255 is very fast but 240 is
+already **a lot** slower.
 
 Attributions
 ============

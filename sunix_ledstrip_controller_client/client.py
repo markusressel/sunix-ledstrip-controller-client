@@ -5,8 +5,9 @@ import socket
 from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
 from sunix_ledstrip_controller_client.controller import Controller
+from sunix_ledstrip_controller_client.functions import FunctionId
 from sunix_ledstrip_controller_client.packets.requests import (
-    StatusRequest, SetPowerRequest, UpdateColorRequest)
+    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest)
 from sunix_ledstrip_controller_client.packets.responses import (
     StatusResponse)
 
@@ -172,6 +173,19 @@ class LEDStripControllerClient:
 
         self._send_data(controller.get_host(), controller.get_port(), data)
         self.update_state(controller)
+
+    def set_function(self, controller: Controller, function_id: FunctionId, speed: int):
+        """
+        Sets a function on the specified controller
+        
+        :param controller: the controller to set the function on 
+        :param function_id: Function ID
+        :param speed: speed of function
+        """
+        request = SetFunctionRequest()
+        data = request.get_data(function_id, speed)
+
+        self._send_data(controller.get_host(), controller.get_port(), data)
 
     @staticmethod
     def _send_data(host: str, port: int, data, wait_for_response: bool = False) -> bytearray or None:

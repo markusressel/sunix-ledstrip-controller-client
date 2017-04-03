@@ -1,5 +1,6 @@
 from construct import Struct, Int8ub
 
+from sunix_ledstrip_controller_client.functions import FunctionId
 from sunix_ledstrip_controller_client.packets import _calculate_checksum
 
 
@@ -180,6 +181,61 @@ class UpdateColorRequest(Struct):
                       warm_white=warm_white,
                       cold_white=cold_white,
                       rgbww_selection=0x0F,
+                      remote_or_local=0x0F,
+                      checksum=0)
+
+        checksum = _calculate_checksum(params)
+        params["checksum"] = checksum
+
+        return self.build(params)
+
+
+class SetFunctionRequest(Struct):
+    """
+    Request for setting a function
+    """
+
+    def __init__(self):
+        super().__init__(
+            # this is the id of the action to perform
+            "packet_id" / Int8ub,
+
+            # the id of the function to set
+            # have a look at functions.FunctionId for a complete list
+            "function_id" / Int8ub,
+            # the speed at which the function should change colors or strobe etc.
+            # originally this value is inverted, meaning 0 is fastest and 255 is slowest
+            "speed" / Int8ub,
+
+            # this value specifies if the gateway is accessible locally or remotely
+            # the remote value is only used by the official app
+            # 0x0F for local
+            # 0xF0 for remote
+            "remote_or_local" / Int8ub,
+
+            # this is a checksum of the data packet
+            "checksum" / Int8ub
+        )
+
+    def get_data(self, function_id: FunctionId, speed: int) -> dict:
+        """
+        Generates a binary data packet containing the request to set a function
+        
+        :param function_id: ID of the function 
+        :param speed: function speed [0..255] 0 is slow, 255 is fast
+        :return: binary data packet
+        """
+
+        from sunix_ledstrip_controller_client import functions
+        if not functions.is_valid(function_id):
+            raise ValueError("Invalid function id")
+
+        if speed < 0 or speed > 255:
+            raise ValueError("Invalid speed value")
+
+        params = dict(packet_id=0x61,
+                      function_id=function_id.value,
+                      speed=255 - speed,
                       remote_or_local=0x0F,
                       checksum=0)
 
