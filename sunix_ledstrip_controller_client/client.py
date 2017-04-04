@@ -174,6 +174,12 @@ class LEDStripControllerClient:
         self._send_data(controller.get_host(), controller.get_port(), data)
         self.update_state(controller)
 
+    def get_function_list(self) -> [FunctionId]:
+        """
+        :return: a list of all supported functions 
+        """
+        return list(FunctionId)
+
     def set_function(self, controller: Controller, function_id: FunctionId, speed: int):
         """
         Sets a function on the specified controller
