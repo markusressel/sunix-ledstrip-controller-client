@@ -103,7 +103,7 @@ class LEDStripControllerClient:
     def turn_on(self, controller: Controller) -> None:
         """
         Turns on a controller
-        :param: the controller to turn on
+        :param controller: the controller to turn on
         """
 
         request = SetPowerRequest()
@@ -115,7 +115,7 @@ class LEDStripControllerClient:
     def turn_off(self, controller: Controller) -> None:
         """
         Turns on a controller
-        :param: the controller to turn on
+        :param controller: the controller to turn on
         """
 
         request = SetPowerRequest()
@@ -137,6 +137,8 @@ class LEDStripControllerClient:
         :param cold_white: cold white intensity (0..255)
         """
 
+        self.validate_color([red, green, blue, warm_white, cold_white], 5)
+
         request = UpdateColorRequest()
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
 
@@ -153,6 +155,8 @@ class LEDStripControllerClient:
         :param blue: blue intensity (0..255)
         """
 
+        self.validate_color([red, green, blue], 3)
+
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
 
@@ -168,11 +172,42 @@ class LEDStripControllerClient:
         :param cold_white: cold white intensity (0..255)
         """
 
+        self.validate_color([warm_white, cold_white], 2)
+
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
         self.update_state(controller)
+
+    def set_color_loop(self, *args: list([int, int, int, int, int])) -> None:
+        """
+        Set a custom color loop.
+        :param args: 
+        :return: 
+        """
+        for color in args:
+            self.validate_color(color, 5)
+
+        print(args)
+
+    @staticmethod
+    def validate_color(color: [int], color_channels: int) -> None:
+        """
+        Validates an int array that is meant to represent a color.
+        If the color is valid this method will not do anything.
+        There is no return value to check, the method will raise an Exception if necessary.
+        
+        :param color: the color array to validate
+        :param color_channels: the expected amount of color channels in this color 
+        """
+        if len(color) != color_channels:
+            raise ValueError(
+                "Invalid size of color array. Expected " + str(color_channels) + ", got: " + str(len(color)))
+
+        for color_channel in color:
+            if color_channel < 0 or color_channel > 255:
+                raise ValueError("Invalid color range! Expected 0-255, got: " + str(color_channel))
 
     def get_function_list(self) -> [FunctionId]:
         """
