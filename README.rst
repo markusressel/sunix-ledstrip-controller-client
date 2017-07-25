@@ -7,23 +7,23 @@ Build Status
 ============
 
 .. |build_master| image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=master
-:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
+    :target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
 
 .. |build_beta| image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=beta
-:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
+    :target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
 
 .. |build_dev| image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=dev
-:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
+    :target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
 
 
 .. |codebeat_master| image:: https://codebeat.co/badges/9dd4227d-a247-4c9b-9091-7472f3e19434
-:target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-master
+    :target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-master
 
 .. |codebeat_beta| image:: image:: https://codebeat.co/badges/256be541-3755-45f3-91ca-XXXXXXX
-:target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-beta
+    :target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-beta
 
 .. |codebeat_dev| image:: https://codebeat.co/badges/256be541-3755-45f3-91ca-12f1257cd9a5
-:target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-dev
+    :target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-dev
 
 +--------------------+------------------+-----------------+
 | Master             | Beta             | Dev             |
