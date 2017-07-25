@@ -71,7 +71,7 @@ class Controller:
     def get_brightness(self) -> int or None:
         """
         Note: this value is calculated in the library and not on the device
-        :return: the brightness of the controller [0..255] or -1 if no value is set
+        :return: the brightness of the controller [0..255] or None if no value is set
         """
         if not self._rgbww:
             return None

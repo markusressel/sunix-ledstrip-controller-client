@@ -53,7 +53,7 @@ def color_test():
     api.turn_off(device)
 
 
-# run a color thest that cycles through all the base colors
+# run a color test that cycles through all the base colors
 color_test()
 
 api.turn_on(device)
