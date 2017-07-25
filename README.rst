@@ -6,8 +6,33 @@ A python 3.4+ library for controlling the Sunix® RGB / RGBWWCW WiFi LED Strip c
 Build Status
 ============
 
-.. image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=master
-:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client
+.. |build_master| image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=master
+:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
+
+.. |build_beta| image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=beta
+:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
+
+.. |build_dev| image:: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client.svg?branch=dev
+:target: https://travis-ci.org/markusressel/sunix-ledstrip-controller-client/branches
+
+
+.. |codebeat_master| image:: https://codebeat.co/badges/9dd4227d-a247-4c9b-9091-7472f3e19434
+:target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-master
+
+.. |codebeat_beta| image:: image:: https://codebeat.co/badges/256be541-3755-45f3-91ca-XXXXXXX
+:target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-beta
+
+.. |codebeat_dev| image:: https://codebeat.co/badges/256be541-3755-45f3-91ca-12f1257cd9a5
+:target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-dev
+
++--------------------+------------------+-----------------+
+| Master             | Beta             | Dev             |
++====================+==================+=================+
+| |build_master|     | |build_beta|     | |build_dev|     |
++--------------------+------------------+-----------------+
+| |codebeat_master|  | |codebeat_beta|  | |codebeat_dev|  |
++--------------------+------------------+-----------------+
+
 
 How to use
 ==========
