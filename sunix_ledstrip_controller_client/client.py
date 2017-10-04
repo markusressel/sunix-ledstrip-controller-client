@@ -1,6 +1,7 @@
 """
 Example usage of the LEDStripControllerClient can be found in the example.py file
 """
+import datetime
 import socket
 from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
@@ -8,9 +9,10 @@ from sunix_ledstrip_controller_client.controller import Controller
 from sunix_ledstrip_controller_client.functions import FunctionId
 from sunix_ledstrip_controller_client.packets import TransitionType
 from sunix_ledstrip_controller_client.packets.requests import (
-    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest, SetCustomFunctionRequest)
+    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest, SetCustomFunctionRequest, GetTimeRequest,
+    SetTimeRequest)
 from sunix_ledstrip_controller_client.packets.responses import (
-    StatusResponse)
+    StatusResponse, GetTimeResponse)
 
 
 class LEDStripControllerClient:
@@ -75,6 +77,45 @@ class LEDStripControllerClient:
 
         except socket.timeout:
             return discovered_controllers
+
+    def get_time(self, controller: Controller) -> datetime:
+        """
+        Receives the current time of the controller
+
+        :param controller: the controller to use
+        :return: the current time of the controller
+        """
+
+        request = GetTimeRequest()
+        data = request.get_data()
+
+        response_data = self._send_data(controller.get_host(), controller.get_port(), data, True)
+
+        # parse and check validity of response data
+        status_response = GetTimeResponse(response_data).get_response()
+
+        dt = datetime.datetime(
+            status_response["year"] + 2000,
+            status_response["month"],
+            status_response["day"],
+            status_response["hour"],
+            status_response["minute"],
+            status_response["second"]
+        )
+        return dt
+
+    def set_time(self, controller: Controller, date_time: datetime) -> None:
+        """
+        Sets the internal time of the controller
+
+        :param controller: the controller to use
+        :param date_time: the time to set
+        """
+
+        request = SetTimeRequest()
+        data = request.get_data(date_time)
+
+        self._send_data(controller.get_host(), controller.get_port(), data)
 
     def update_state(self, controller: Controller) -> None:
         """

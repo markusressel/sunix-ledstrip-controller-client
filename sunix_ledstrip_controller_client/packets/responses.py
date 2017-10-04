@@ -47,3 +47,47 @@ class StatusResponse(Struct):
             raise ValueError("invalid or missing checksum")
 
         return self.parse(self._data)
+
+
+class GetTimeResponse(Struct):
+    """
+    The response to the GetTimeRequest request
+    """
+
+    def __init__(self, data: bytearray):
+        super().__init__(
+            "packet_id" / Int8ub,
+
+            "unknown1" / Int8ub,
+            "unknown2" / Int8ub,
+
+            # add 2000 to this value to get the correct year
+            "year" / Int8ub,
+            "month" / Int8ub,
+            "day" / Int8ub,
+            "hour" / Int8ub,
+            "minute" / Int8ub,
+            "second" / Int8ub,
+
+            "dayofweek" / Int8ub,
+            "unknown3" / Int8ub,
+
+            "checksum" / Int8ub
+        )
+
+        self._data = data
+
+    def evaluate(self) -> bool:
+        """
+        :return: True if this response is valid, false otherwise
+        """
+        return _evaluate_checksum(self.parse(self._data))
+
+    def get_response(self) -> dict:
+        """
+        :return: the response in the expected format
+        """
+        if not self.evaluate():
+            raise ValueError("invalid or missing checksum")
+
+        return self.parse(self._data)

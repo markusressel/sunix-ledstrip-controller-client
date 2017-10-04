@@ -1,7 +1,105 @@
+import datetime as datetime
+
 from construct import Struct, Int8ub
 
 from sunix_ledstrip_controller_client.functions import FunctionId
 from sunix_ledstrip_controller_client.packets import _calculate_checksum, TransitionType
+
+
+class GetTimeRequest(Struct):
+    """
+    Request for the current time of the controller
+    """
+
+    def __init__(self):
+        super().__init__(
+            "packet_id" / Int8ub,
+
+            "payload1" / Int8ub,
+            "payload2" / Int8ub,
+
+            # this value specifies if the gateway is accessible locally or remotely
+            # the remote value is only used by the official app
+            # 0x0F for local
+            # 0xF0 for remote
+            "remote_or_local" / Int8ub,
+
+            "checksum" / Int8ub
+        )
+
+    def get_data(self) -> dict:
+        """
+        Generates a binary data packet containing the a request for the current time of the controller
+        :return: binary data packet
+        """
+        params = dict(packet_id=0x11,
+                      payload1=0x1A,
+                      payload2=0x1B,
+                      remote_or_local=0x0F,
+                      checksum=0)
+
+        checksum = _calculate_checksum(params)
+        params["checksum"] = checksum
+
+        return self.build(params)
+
+
+class SetTimeRequest(Struct):
+    """
+    Request to set the current time of the controller
+    """
+
+    def __init__(self):
+        super().__init__(
+            "packet_id" / Int8ub,
+
+            "payload1" / Int8ub,
+
+            # the current year - 2000
+            "year" / Int8ub,
+            "month" / Int8ub,
+            "day" / Int8ub,
+            "hour" / Int8ub,
+            "minute" / Int8ub,
+            "second" / Int8ub,
+            # from Monday (1) - Sunday (7)
+            "weekday" / Int8ub,
+
+            "payload2" / Int8ub,
+
+            # this value specifies if the gateway is accessible locally or remotely
+            # the remote value is only used by the official app
+            # 0x0F for local
+            # 0xF0 for remote
+            "remote_or_local" / Int8ub,
+
+            "checksum" / Int8ub
+        )
+
+    def get_data(self, dt: datetime) -> dict:
+        """
+        Generates a binary data packet containing the a request for the current time of the controller
+        :return: binary data packet
+        """
+        params = dict(packet_id=0x10,
+                      payload1=0x14,
+
+                      year=dt.year - 2000,
+                      month=dt.month,
+                      day=dt.day,
+                      hour=dt.hour,
+                      minute=dt.minute,
+                      second=dt.second,
+                      weekday=dt.isoweekday(),
+
+                      payload2=0x00,
+                      remote_or_local=0x0F,
+                      checksum=0)
+
+        checksum = _calculate_checksum(params)
+        params["checksum"] = checksum
+
+        return self.build(params)
 
 
 class StatusRequest(Struct):
@@ -231,7 +329,7 @@ class SetFunctionRequest(Struct):
             raise ValueError("Invalid function id")
 
         if speed < 0 or speed > 255:
-            raise ValueError("Invalid speed value")
+            raise ValueError("Invalid speed value! Expected 0-255, got: %d" % speed)
 
         params = dict(packet_id=0x61,
                       function_id=function_id.value,
@@ -341,9 +439,11 @@ class SetCustomFunctionRequest(Struct):
             "speed" / Int8ub,
 
             # the transition type between colors
-            # have a look at TransitionType for more info
+            # have a look at the TransitionType enum for more info
             "transition_type" / Int8ub,
 
+            # this value normaly specifies if only rgb, only ww or both values will be changed
+            # this is not supported for custom functions though and can not be altered as it has no effect
             "rgbww_selection" / Int8ub,
 
             # this value specifies if the gateway is accessible locally or remotely
@@ -376,7 +476,7 @@ class SetCustomFunctionRequest(Struct):
                 raise ValueError("Unexpected tuple size %d in color %s! Expected: 3 or 4" % (len(color), str(color)))
 
         if speed < 0 or speed > 255:
-            raise ValueError("Invalid speed value")
+            raise ValueError("Invalid speed value! Expected 0-255, got: %d" % speed)
 
         processed_colors = []
 
