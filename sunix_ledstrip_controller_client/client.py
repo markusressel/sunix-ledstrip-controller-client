@@ -6,8 +6,9 @@ from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
 from sunix_ledstrip_controller_client.controller import Controller
 from sunix_ledstrip_controller_client.functions import FunctionId
+from sunix_ledstrip_controller_client.packets import TransitionType
 from sunix_ledstrip_controller_client.packets.requests import (
-    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest)
+    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest, SetCustomFunctionRequest)
 from sunix_ledstrip_controller_client.packets.responses import (
     StatusResponse)
 
@@ -221,10 +222,31 @@ class LEDStripControllerClient:
         
         :param controller: the controller to set the function on 
         :param function_id: Function ID
-        :param speed: speed of function
+        :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
+
+        self._send_data(controller.get_host(), controller.get_port(), data)
+
+    def set_custom_function(self, controller: Controller, color_values: [(int, int, int, int)],
+                            speed: int, transition_type: TransitionType = TransitionType.Gradual):
+
+        """
+        Sets a custom function on the specified controller
+
+        :param controller: the controller to set the function on
+        :param color_values: a list of color tuples of the form (red, green, blue) or (red, green, blue, unknown).
+                             I couldn't figure out what the last parameter is used for so the rgb is a shortcut.
+        :param transition_type: the transition type between colors
+        :param speed: function speed [0..255] 0 is slow, 255 is fast
+        """
+
+        for color in color_values:
+            self.validate_color(color, len(color))
+
+        request = SetCustomFunctionRequest()
+        data = request.get_data(color_values, speed, transition_type)
 
         self._send_data(controller.get_host(), controller.get_port(), data)
 

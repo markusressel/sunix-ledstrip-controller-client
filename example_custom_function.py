@@ -1,16 +1,15 @@
 from sunix_ledstrip_controller_client import LEDStripControllerClient
 from sunix_ledstrip_controller_client.controller import Controller
+from sunix_ledstrip_controller_client.packets import TransitionType
 
 api = LEDStripControllerClient()
 # devices = api.discover_controllers()
 
 device = Controller("192.168.2.23")
 
-# api.set_function(device, FunctionId.RED_GRADUAL_CHANGE, 240)
+colors = [(255, 0, 0, 255),
+          (0, 255, 0),
+          (0, 0, 255)]
 
-# api.turn_on(device)
-#
-api.set_rgbww(device, 255, 255, 255, 255, 255)
-#
-# api.update_state(device)
-#
+api.set_ww(device, 0, 0)
+api.set_custom_function(device, colors, 250, TransitionType.Gradual)

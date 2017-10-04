@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 def _calculate_checksum(params: dict) -> int:
     """
     Calculates the checksum for a request
@@ -32,3 +35,13 @@ def _evaluate_checksum(data: dict) -> bool:
 
     expected = _calculate_checksum(data)
     return data["checksum"] == expected
+
+
+class TransitionType(Enum):
+    """
+    The transition type between colors of a custom function
+    """
+
+    Gradual = 0x3A
+    Jumping = 0x3B
+    Strobe = 0x3C
