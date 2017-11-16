@@ -4,7 +4,7 @@ from sunix_ledstrip_controller_client import LEDStripControllerClient
 from sunix_ledstrip_controller_client.controller import Controller
 
 
-class TestStringMethods(unittest.TestCase):
+class TestBasicMethods(unittest.TestCase):
     def test_create_api(self):
         """
         Creates the api and object
