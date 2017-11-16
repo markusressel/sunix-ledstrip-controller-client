@@ -315,7 +315,7 @@ class SetFunctionRequest(Struct):
             "checksum" / Int8ub
         )
 
-    def get_data(self, function_id: FunctionId, speed: int) -> dict:
+    def get_data(self, function_id: FunctionId or str or int, speed: int) -> dict:
         """
         Generates a binary data packet containing the request to set a function
         
@@ -325,6 +325,13 @@ class SetFunctionRequest(Struct):
         """
 
         from sunix_ledstrip_controller_client import functions
+
+        # try to accept str and int types
+        if isinstance(function_id, str):
+            function_id = FunctionId[function_id]
+        if isinstance(function_id, int):
+            function_id = FunctionId(function_id)
+
         if not functions.is_valid(function_id):
             raise ValueError("Invalid function id")
 
