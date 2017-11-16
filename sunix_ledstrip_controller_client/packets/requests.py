@@ -469,7 +469,7 @@ class SetCustomFunctionRequest(Struct):
 
         # do a little input validation
         if len(colors) > 16:
-            raise ValueError("Only up to 16 colors are supported! You provided %d :(" % len(colors))
+            raise ValueError("Only up to 16 color states are supported! You provided %d :(" % len(colors))
 
         for color in colors:
             if len(color) is not 3 and len(color) is not 4:
