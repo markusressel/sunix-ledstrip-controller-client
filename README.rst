@@ -145,6 +145,36 @@ In the network protocol the speed is actually reversed (0 is fast, 255 is slow) 
 You should be aware though that the **speed curve seems to be exponential**. This means 255 is very fast but 240 is
 already **a lot** slower.
 
+Custom Functions
+----------------
+
+Another feature of the official app is to set a custom color loop with a custom transition and speed between the colors.
+Since v1.2.0 of this library you can set those too :)
+
+Simply have a look at the `example_custom_function.py <https://github.com/markusressel/sunix-ledstrip-controller-client/blob/master/example_custom_function.py>`_ file
+for a detailed example.
+
+Set/Get Time
+------------
+
+The Sunix® controller has a build in clock to be able to execute timer actions.
+Currently there is no way to get or set timers with this library.
+You can however get and set the current time of the controller.
+
+To get the currently set time use:
+
+.. code-block:: python
+
+    time = api.get_time(device)
+
+To set a new value use:
+
+.. code-block:: python
+
+    dt = datetime.datetime.now()
+    api.set_time(device, dt)
+
+
 Attributions
 ============
 
