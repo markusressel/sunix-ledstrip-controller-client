@@ -11,5 +11,9 @@ colors = [(255, 0, 0, 255),
           (0, 255, 0),
           (0, 0, 255)]
 
+colors_too_many = [(255, 0, 0, 255),
+                   (0, 255, 0),
+                   (0, 0, 255)]
+
 api.set_ww(device, 0, 0)
 api.set_custom_function(device, colors, 250, TransitionType.Gradual)
