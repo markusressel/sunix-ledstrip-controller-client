@@ -1,8 +1,30 @@
+import subprocess
+
 from setuptools import setup, find_packages
+
+VERSION_NUMBER = "1.2.1"
+
+GIT_BRANCH = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+GIT_BRANCH = GIT_BRANCH.decode()  # convert to standard string
+GIT_BRANCH = GIT_BRANCH.rstrip()  # remove unnecessary whitespace
+
+if GIT_BRANCH == "master":
+    DEVELOPMENT_STATUS = "Development Status :: 5 - Production/Stable"
+    VERSION_NAME = VERSION_NUMBER
+elif GIT_BRANCH == "beta":
+    DEVELOPMENT_STATUS = "Development Status :: 4 - Beta"
+    VERSION_NAME = "%s-beta" % VERSION_NUMBER
+elif GIT_BRANCH == "dev":
+    DEVELOPMENT_STATUS = "Development Status :: 3 - Alpha"
+    VERSION_NAME = "%s-dev" % VERSION_NUMBER
+else:
+    print("Unknown git branch, using pre-alpha as default")
+    DEVELOPMENT_STATUS = "Development Status :: 2 - Pre-Alpha"
+    VERSION_NAME = "%s-%s" % (VERSION_NUMBER, GIT_BRANCH)
 
 setup(
     name='sunix_ledstrip_controller_client',
-    version='1.2.0',
+    version=VERSION_NAME,
     description='A library for controlling the Sunix RGB / RGBWWCW WiFi LED Strip controller',
     license='GPLv3+',
     author='Markus Ressel',
@@ -10,7 +32,7 @@ setup(
     url='https://www.markusressel.de',
     packages=find_packages(),
     classifiers=[
-        'Development Status :: 4 - Beta',
+        DEVELOPMENT_STATUS,
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
     ],
