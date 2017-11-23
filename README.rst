@@ -19,7 +19,7 @@ Build Status
 .. |codebeat_master| image:: https://codebeat.co/badges/9dd4227d-a247-4c9b-9091-7472f3e19434
     :target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-master
 
-.. |codebeat_beta| image:: image:: https://codebeat.co/badges/256be541-3755-45f3-91ca-XXXXXXX
+.. |codebeat_beta| image:: https://codebeat.co/badges/68d80d07-2c69-4320-9f0a-02165dafae11
     :target: https://codebeat.co/projects/github-com-markusressel-sunix-ledstrip-controller-client-beta
 
 .. |codebeat_dev| image:: https://codebeat.co/badges/256be541-3755-45f3-91ca-12f1257cd9a5

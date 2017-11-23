@@ -27,10 +27,10 @@ class Controller:
         self._rgbww = None
 
     def __str__(self):
-        return ("Host: " + self.get_host() + "\n" +
-                "Port: " + str(self.get_port()) + "\n" +
-                "Hardware ID: " + self.get_hardware_id() + "\n" +
-                "Model: " + self.get_model())
+        return ("Host: %s\n" % (self.get_host()) +
+                "Port: %s\n" % (self.get_port()) +
+                "Hardware ID: %s\n" % (self.get_hardware_id()) +
+                "Model: %s" % (self.get_model()))
 
     def get_host(self) -> str or None:
         """
