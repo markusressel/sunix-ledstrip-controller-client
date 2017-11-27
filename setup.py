@@ -2,7 +2,7 @@ import subprocess
 
 from setuptools import setup, find_packages
 
-VERSION_NUMBER = "1.2.1"
+VERSION_NUMBER = "1.2.2"
 
 GIT_BRANCH = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
 GIT_BRANCH = GIT_BRANCH.decode()  # convert to standard string
@@ -35,6 +35,10 @@ setup(
         DEVELOPMENT_STATUS,
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7'
     ],
     install_requires=[
         'construct',
