@@ -2,15 +2,13 @@ from sunix_ledstrip_controller_client import LEDStripControllerClient
 from sunix_ledstrip_controller_client.controller import Controller
 
 api = LEDStripControllerClient()
-# devices = api.discover_controllers()
 
-device = Controller("192.168.2.23")
+# use the raw api methods
+api.turn_on("192.168.2.23", 5577)
+api.set_rgbww("192.168.2.23", 5577, 255, 255, 255, 255, 255)
 
-# api.set_function(device, FunctionId.RED_GRADUAL_CHANGE, 240)
+# or use a controller class for convenient method access
+device = Controller(api, "192.168.2.23")
 
-# api.turn_on(device)
-#
-api.set_rgbww(device, 255, 255, 255, 255, 255)
-#
-# api.update_state(device)
-#
+device.turn_on()
+device.set_rgbww(255, 255, 255, 255, 255)

@@ -5,19 +5,19 @@ import datetime
 import socket
 from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
-from sunix_ledstrip_controller_client.controller import Controller
-from sunix_ledstrip_controller_client.functions import FunctionId
-from sunix_ledstrip_controller_client.packets import TransitionType
-from sunix_ledstrip_controller_client.packets.requests import (
-    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest, SetCustomFunctionRequest, GetTimeRequest,
-    SetTimeRequest)
 from sunix_ledstrip_controller_client.packets.responses import (
     StatusResponse, GetTimeResponse)
+from .controller import Controller
+from .functions import FunctionId
+from .packets import TransitionType
+from .packets.requests import (
+    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest, SetCustomFunctionRequest, GetTimeRequest,
+    SetTimeRequest)
 
 
 class LEDStripControllerClient:
     """
-    This class is the main interface for controlling all devices
+    This class is the main interface for controlling devices
     """
 
     _discovery_port = 48899
@@ -46,18 +46,21 @@ class LEDStripControllerClient:
 
         cs.setblocking(True)
         cs.settimeout(1)
-
+        received_messages = []
         try:
             # TODO: allow multiple controller detection
+            while True:
+                data, address = cs.recvfrom(4096)
+                # print("Received message: \"%s\"" % data)
+                # print("Address: " + address[0])
 
-            data, address = cs.recvfrom(4096)
-            # print("Received message: \"%s\"" % data)
-            # print("Address: " + address[0])
+                received_messages.append(data.decode())
 
-            message = data.decode()
+        except socket.timeout:
+            if len(received_messages) <= 0:
+                return discovered_controllers
 
-            # print(message)
-
+        for message in received_messages:
             # parse received message
             data = str.split(message, ",")
 
@@ -69,27 +72,26 @@ class LEDStripControllerClient:
                 model = data[2]
 
                 # create a Controller object representation
-                controller = Controller(ip, Controller.DEFAULT_PORT, hw_id, model)
+                controller = Controller(self, ip, Controller.DEFAULT_PORT, hw_id, model)
                 print(controller)
 
                 discovered_controllers.append(controller)
-                return discovered_controllers
 
-        except socket.timeout:
-            return discovered_controllers
+        return discovered_controllers
 
-    def get_time(self, controller: Controller) -> datetime:
+    def get_time(self, host: str, port: int) -> datetime:
         """
-        Receives the current time of the controller
+        Receives the current time of the specified controller
 
-        :param controller: the controller to use
+        :param host: controller host address
+        :param port: controller port
         :return: the current time of the controller
         """
 
         request = GetTimeRequest()
         data = request.get_data()
 
-        response_data = self._send_data(controller.get_host(), controller.get_port(), data, True)
+        response_data = self._send_data(host, port, data, True)
 
         # parse and check validity of response data
         status_response = GetTimeResponse(response_data).get_response()
@@ -104,74 +106,71 @@ class LEDStripControllerClient:
         )
         return dt
 
-    def set_time(self, controller: Controller, date_time: datetime) -> None:
+    def set_time(self, host: str, port: int, date_time: datetime) -> None:
         """
         Sets the internal time of the controller
 
-        :param controller: the controller to use
+        :param host: controller host address
+        :param port: controller port
         :param date_time: the time to set
         """
 
         request = SetTimeRequest()
         data = request.get_data(date_time)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
+        self._send_data(host, port, data)
 
-    def update_state(self, controller: Controller) -> None:
+    def get_state(self, host: str, port: int) -> dict:
         """
         Updates the state of the passed in controller
         
-        :param controller: the controller to update 
+        :param host: controller host address
+        :param port: controller port
         """
 
         request = StatusRequest()
         data = request.get_data()
 
-        response_data = self._send_data(controller.get_host(), controller.get_port(), data, True)
+        response_data = self._send_data(host, port, data, True)
 
         # parse and check validity of response data
         status_response = StatusResponse(response_data).get_response()
 
-        # update the controller values from the response
-        controller._power_state = status_response["power_status"]
-        controller._rgbww = [
-            status_response["red"],
-            status_response["green"],
-            status_response["blue"],
-            status_response["warm_white"],
-            status_response["cold_white"]
-        ]
+        return status_response
 
-    def turn_on(self, controller: Controller) -> None:
+    def turn_on(self, host: str, port: int) -> None:
         """
         Turns on a controller
-        :param controller: the controller to turn on
+
+        :param host: controller host address
+        :param port: controller port
         """
 
         request = SetPowerRequest()
         data = request.get_data(True)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
-        self.update_state(controller)
+        self._send_data(host, port, data)
 
-    def turn_off(self, controller: Controller) -> None:
+    def turn_off(self, host: str, port: int) -> None:
         """
         Turns on a controller
-        :param controller: the controller to turn on
+
+        :param host: controller host address
+        :param port: controller port
         """
 
         request = SetPowerRequest()
         data = request.get_data(False)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
-        self.update_state(controller)
+        self._send_data(host, port, data)
 
-    def set_rgbww(self, controller: Controller, red: int, green: int, blue: int,
+    def set_rgbww(self, host: str, port: int, red: int, green: int, blue: int,
                   warm_white: int, cold_white: int) -> None:
         """
         Sets rgbww values for the specified controller.
         
-        :param controller: the controller to set the specified values on 
+        :param host: controller host address
+        :param port: controller port
         :param red: red intensity (0..255)
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
@@ -184,14 +183,14 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
-        self.update_state(controller)
+        self._send_data(host, port, data)
 
-    def set_rgb(self, controller: Controller, red: int, green: int, blue: int) -> None:
+    def set_rgb(self, host: str, port: int, red: int, green: int, blue: int) -> None:
         """
         Sets rgbw values for the specified controller.
         
-        :param controller: the controller to set the specified values on 
+        :param host: controller host address
+        :param port: controller port
         :param red: red intensity (0..255)
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
@@ -202,14 +201,14 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
-        self.update_state(controller)
+        self._send_data(host, port, data)
 
-    def set_ww(self, controller: Controller, warm_white: int, cold_white: int) -> None:
+    def set_ww(self, host: str, port: int, warm_white: int, cold_white: int) -> None:
         """
-        Sets warm white value for the specified controller.
+        Sets warm white and cold white values for the specified controller.
 
-        :param controller: the controller to set the specified values on 
+        :param host: controller host address
+        :param port: controller port
         :param warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
@@ -219,8 +218,7 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
-        self.update_state(controller)
+        self._send_data(host, port, data)
 
     def get_function_list(self) -> [FunctionId]:
         """
@@ -228,26 +226,28 @@ class LEDStripControllerClient:
         """
         return list(FunctionId)
 
-    def set_function(self, controller: Controller, function_id: FunctionId, speed: int):
+    def set_function(self, host: str, port: int, function_id: FunctionId, speed: int):
         """
         Sets a function on the specified controller
         
-        :param controller: the controller to set the function on 
+        :param host: controller host address
+        :param port: controller port
         :param function_id: Function ID
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
+        self._send_data(host, port, data)
 
-    def set_custom_function(self, controller: Controller, color_values: [(int, int, int, int)],
+    def set_custom_function(self, host: str, port: int, color_values: [(int, int, int, int)],
                             speed: int, transition_type: TransitionType = TransitionType.Gradual):
 
         """
         Sets a custom function on the specified controller
 
-        :param controller: the controller to set the function on
+        :param host: controller host address
+        :param port: controller port
         :param color_values: a list of up to 16 color tuples of the form (red, green, blue) or (red, green, blue, unknown).
                              I couldn't figure out what the last parameter is used for so the rgb is a shortcut.
         :param transition_type: the transition type between colors
@@ -260,7 +260,7 @@ class LEDStripControllerClient:
         request = SetCustomFunctionRequest()
         data = request.get_data(color_values, speed, transition_type)
 
-        self._send_data(controller.get_host(), controller.get_port(), data)
+        self._send_data(host, port, data)
 
     @staticmethod
     def _send_data(host: str, port: int, data, wait_for_response: bool = False) -> bytearray or None:

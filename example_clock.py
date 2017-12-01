@@ -6,11 +6,15 @@ from sunix_ledstrip_controller_client.controller import Controller
 api = LEDStripControllerClient()
 # devices = api.discover_controllers()
 
-device = Controller("192.168.2.23")
+device = Controller(api, "192.168.2.23")
 
-print(api.get_time(device))
+# print the current time of the controller
+print(device.get_time())
 
+# create a datetime object
 dt = datetime.datetime.now()
-api.set_time(device, dt)
+# and set this as the new current time of the controller
+device.set_time(dt)
 
-print(api.get_time(device))
+# print the result
+print(device.get_time())
