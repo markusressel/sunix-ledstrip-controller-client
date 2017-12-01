@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import MagicMock
 
 from sunix_ledstrip_controller_client import LEDStripControllerClient
 from sunix_ledstrip_controller_client.controller import Controller
@@ -20,7 +21,21 @@ class TestBasicMethods(unittest.TestCase):
         """
         host = "192.168.2.53"
 
-        device = Controller(host)
+        api = LEDStripControllerClient()
+        response_dict = {
+            "device_name": "Test",
+            "power_status": 0x24,
+            "mode": "1",
+            "speed": 255,
+            "red": 255,
+            "green": 255,
+            "blue": 255,
+            "warm_white": 255,
+            "cold_white": 255,
+        }
+        api.get_state = MagicMock(return_value=response_dict)
+
+        device = Controller(api, host)
         self.assertIsNotNone(device)
 
         self.assertEqual(device.get_host(), host)
@@ -41,6 +56,19 @@ class TestBasicMethods(unittest.TestCase):
         model = "The Best One Ever"
 
         api = LEDStripControllerClient()
+        response_dict = {
+            "device_name": "Test",
+            "power_status": 0x24,
+            "mode": "1",
+            "speed": 255,
+            "red": 255,
+            "green": 255,
+            "blue": 255,
+            "warm_white": 255,
+            "cold_white": 255,
+        }
+        api.get_state = MagicMock(return_value=response_dict)
+
         device = Controller(api, host, port, hardware_id, model)
         self.assertIsNotNone(device)
 
