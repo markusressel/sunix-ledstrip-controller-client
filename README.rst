@@ -77,14 +77,16 @@ or create one manually like this:
 
 .. code-block:: python
 
-    from sunix_ledstrip_controller_client.controller import Controller
-    device = Controller("192.168.2.23")
+    from sunix_ledstrip_controller_client import Controller
+    device = Controller(api, "192.168.2.23")
 
 or including a port if you want to access it from outside of your local network:
 
 .. code-block:: python
 
-    device = Controller("192.168.2.23", 12345)
+    device = Controller(api, "my-dyndns-address.org", 12345)
+
+Note that you have to supply an api object so the Controller can fetch is state.
 
 Turn it on!
 -----------
@@ -94,13 +96,13 @@ Use this method to turn it on:
 
 .. code-block:: python
 
-    api.turn_on(device)
+    device.turn_on()
 
 and this to turn it off:
 
 .. code-block:: python
 
-    api.turn_off(device)
+    device.turn_off()
 
 Make it a rainbow (changing colors)
 -----------------------------------
@@ -114,19 +116,19 @@ If you only want to change the RGB values use:
 
 .. code-block:: python
 
-    api.set_rgb(device, 255, 255, 255)
+    device.set_rgb(255, 255, 255)
 
 and this one if you only want to change the WW value:
 
 .. code-block:: python
 
-    api.set_ww(device, 255, 255)
+    device.set_ww(255, 255)
 
 To set both at the same time use (you guessed it):
 
 .. code-block:: python
 
-    api.set_rgbww(device, 255, 255, 255, 255, 255)
+    device.set_rgbww(255, 255, 255, 255, 255)
 
 Functions
 ---------
@@ -137,8 +139,8 @@ You can activate them though using:
 
 .. code-block:: python
 
-    from sunix_ledstrip_controller_client.functions import FunctionId
-    api.set_function(device, FunctionId.RED_GRADUAL_CHANGE, 240)
+    from sunix_ledstrip_controller_client import FunctionId
+    device.set_function(FunctionId.RED_GRADUAL_CHANGE, 240)
 
 Function ids can be found in the :code:`FunctionId` enum class.
 
@@ -168,14 +170,15 @@ To get the currently set time use:
 
 .. code-block:: python
 
-    time = api.get_time(device)
+    time = device.get_time()
 
+Note that this might be :code:`None` though if you have never set a time for this controller before.
 To set a new value use:
 
 .. code-block:: python
 
     dt = datetime.datetime.now()
-    api.set_time(device, dt)
+    device.set_time(dt)
 
 
 Attributions
