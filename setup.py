@@ -42,6 +42,6 @@ setup(
     ],
     install_requires=[
         'construct',
-        'typing'
+        'typing;python_version<"3.5"'
     ]
 )
