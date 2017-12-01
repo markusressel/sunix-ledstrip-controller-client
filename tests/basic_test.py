@@ -42,8 +42,8 @@ class TestBasicMethods(unittest.TestCase):
         self.assertEqual(device.get_port(), Controller.DEFAULT_PORT)
         self.assertEqual(device.get_hardware_id(), None)
         self.assertEqual(device.get_model(), None)
-        self.assertEqual(device.get_rgbww(), None)
-        self.assertEqual(device.get_brightness(), None)
+        self.assertEqual(device.get_rgbww(), (255, 255, 255, 255, 255))
+        self.assertEqual(device.get_brightness(), 255)
 
     def test_create_controller_custom(self):
         """
@@ -76,8 +76,8 @@ class TestBasicMethods(unittest.TestCase):
         self.assertEqual(device.get_port(), port)
         self.assertEqual(device.get_hardware_id(), hardware_id)
         self.assertEqual(device.get_model(), model)
-        self.assertEqual(device.get_rgbww(), None)
-        self.assertEqual(device.get_brightness(), None)
+        self.assertEqual(device.get_rgbww(), (255, 255, 255, 255, 255))
+        self.assertEqual(device.get_brightness(), 255)
 
 
 if __name__ == '__main__':
