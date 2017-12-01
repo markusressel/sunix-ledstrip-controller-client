@@ -96,15 +96,23 @@ class LEDStripControllerClient:
         # parse and check validity of response data
         status_response = GetTimeResponse(response_data).get_response()
 
-        dt = datetime.datetime(
-            status_response["year"] + 2000,
-            status_response["month"],
-            status_response["day"],
-            status_response["hour"],
-            status_response["minute"],
-            status_response["second"]
-        )
-        return dt
+        if (status_response["year"] is 0
+                and status_response["month"] is 0
+                and status_response["day"] is 0
+                and status_response["hour"] is 0
+                and status_response["minute"] is 0
+                and status_response["second"] is 0):
+            return None
+        else:
+            dt = datetime.datetime(
+                status_response["year"] + 2000,
+                status_response["month"],
+                status_response["day"],
+                status_response["hour"],
+                status_response["minute"],
+                status_response["second"]
+            )
+            return dt
 
     def set_time(self, host: str, port: int, date_time: datetime) -> None:
         """

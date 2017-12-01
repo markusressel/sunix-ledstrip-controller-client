@@ -5,7 +5,6 @@ class Controller:
 
     import datetime
 
-    from .client import LEDStripControllerClient
     from .functions import FunctionId
     from .packets import TransitionType
 
@@ -14,7 +13,7 @@ class Controller:
 
     DEFAULT_PORT = 5577
 
-    def __init__(self, api: LEDStripControllerClient, host: str, port: int = DEFAULT_PORT,
+    def __init__(self, api, host: str, port: int = DEFAULT_PORT,
                  hardware_id: str = None, model: str = None):
         """
         Creates a new controller device object
