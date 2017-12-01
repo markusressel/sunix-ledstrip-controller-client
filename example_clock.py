@@ -1,12 +1,12 @@
 import datetime
 
+from sunix_ledstrip_controller_client import Controller
 from sunix_ledstrip_controller_client import LEDStripControllerClient
-from sunix_ledstrip_controller_client.controller import Controller
 
 api = LEDStripControllerClient()
 # devices = api.discover_controllers()
 
-device = Controller(api, "192.168.2.23")
+device = Controller(api, "192.168.2.37")
 
 # print the current time of the controller
 print(device.get_time())

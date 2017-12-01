@@ -1,3 +1,4 @@
 from sunix_ledstrip_controller_client.client import LEDStripControllerClient
 from sunix_ledstrip_controller_client.controller import Controller
 from sunix_ledstrip_controller_client.functions import FunctionId
+from sunix_ledstrip_controller_client.packets import TransitionType
