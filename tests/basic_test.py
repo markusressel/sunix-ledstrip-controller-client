@@ -40,7 +40,8 @@ class TestBasicMethods(unittest.TestCase):
         hardware_id = "7D89D6789VVBGDJOFDJ"
         model = "The Best One Ever"
 
-        device = Controller(host, port, hardware_id, model)
+        api = LEDStripControllerClient()
+        device = Controller(api, host, port, hardware_id, model)
         self.assertIsNotNone(device)
 
         self.assertEqual(device.get_host(), host)
