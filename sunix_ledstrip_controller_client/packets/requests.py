@@ -1,12 +1,28 @@
 import datetime as datetime
 
-from construct import Struct, Int8ub
+from construct import Int8ub
 
 from sunix_ledstrip_controller_client.functions import FunctionId
-from sunix_ledstrip_controller_client.packets import _calculate_checksum, TransitionType
+from sunix_ledstrip_controller_client.packets import TransitionType, Packet
 
 
-class GetTimeRequest(Struct):
+class Request(Packet):
+    """
+    Base class for a request packet
+    """
+
+    _params = {}
+
+    def _attach_checksum(self):
+        """
+        Attaches a checksum to the end of this packet
+        """
+
+        checksum = self._calculate_checksum(self._params)
+        self._params["checksum"] = checksum
+
+
+class GetTimeRequest(Request):
     """
     Request for the current time of the controller
     """
@@ -32,19 +48,17 @@ class GetTimeRequest(Struct):
         Generates a binary data packet containing the a request for the current time of the controller
         :return: binary data packet
         """
-        params = dict(packet_id=0x11,
-                      payload1=0x1A,
-                      payload2=0x1B,
-                      remote_or_local=0x0F,
-                      checksum=0)
+        self._params = dict(packet_id=0x11,
+                            payload1=0x1A,
+                            payload2=0x1B,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
 
-class SetTimeRequest(Struct):
+class SetTimeRequest(Request):
     """
     Request to set the current time of the controller
     """
@@ -81,28 +95,26 @@ class SetTimeRequest(Struct):
         Generates a binary data packet containing the a request for the current time of the controller
         :return: binary data packet
         """
-        params = dict(packet_id=0x10,
-                      payload1=0x14,
+        self._params = dict(packet_id=0x10,
+                            payload1=0x14,
 
-                      year=dt.year - 2000,
-                      month=dt.month,
-                      day=dt.day,
-                      hour=dt.hour,
-                      minute=dt.minute,
-                      second=dt.second,
-                      weekday=dt.isoweekday(),
+                            year=dt.year - 2000,
+                            month=dt.month,
+                            day=dt.day,
+                            hour=dt.hour,
+                            minute=dt.minute,
+                            second=dt.second,
+                            weekday=dt.isoweekday(),
 
-                      payload2=0x00,
-                      remote_or_local=0x0F,
-                      checksum=0)
+                            payload2=0x00,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
 
-class StatusRequest(Struct):
+class StatusRequest(Request):
     """
     Request for the current status of the controller
     """
@@ -122,18 +134,16 @@ class StatusRequest(Struct):
         Generates a binary data packet containing the a request for the current state of the controller
         :return: binary data packet
         """
-        params = dict(packet_id=0x81,
-                      payload1=0x8A,
-                      payload2=0x8B,
-                      checksum=0)
+        self._params = dict(packet_id=0x81,
+                            payload1=0x8A,
+                            payload2=0x8B,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
 
-class SetPowerRequest(Struct):
+class SetPowerRequest(Request):
     """
     Request for changing the power state
     """
@@ -167,18 +177,16 @@ class SetPowerRequest(Struct):
         """
 
         from sunix_ledstrip_controller_client.controller import Controller
-        params = dict(packet_id=0x71,
-                      power_status=Controller.POWER_STATE_ON if on else Controller.POWER_STATE_OFF,
-                      remote_or_local=0x0F,
-                      checksum=0)
+        self._params = dict(packet_id=0x71,
+                            power_status=Controller.POWER_STATE_ON if on else Controller.POWER_STATE_OFF,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
 
-class UpdateColorRequest(Struct):
+class UpdateColorRequest(Request):
     """
     Request for changing the color state (incl. brightness)
     """
@@ -223,20 +231,18 @@ class UpdateColorRequest(Struct):
         :param cold_white: cold white amount
         :return: binary data packet
         """
-        params = dict(packet_id=0x31,
-                      red=red,
-                      green=green,
-                      blue=blue,
-                      warm_white=warm_white,
-                      cold_white=cold_white,
-                      rgbww_selection=0xFF,
-                      remote_or_local=0x0F,
-                      checksum=0)
+        self._params = dict(packet_id=0x31,
+                            red=red,
+                            green=green,
+                            blue=blue,
+                            warm_white=warm_white,
+                            cold_white=cold_white,
+                            rgbww_selection=0xFF,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
     def get_rgb_data(self, red: int, green: int, blue: int) -> dict:
         """
@@ -248,20 +254,18 @@ class UpdateColorRequest(Struct):
         :return: binary data packet
         """
 
-        params = dict(packet_id=0x31,
-                      red=red,
-                      green=green,
-                      blue=blue,
-                      warm_white=0,
-                      cold_white=0,
-                      rgbww_selection=0xF0,
-                      remote_or_local=0x0F,
-                      checksum=0)
+        self._params = dict(packet_id=0x31,
+                            red=red,
+                            green=green,
+                            blue=blue,
+                            warm_white=0,
+                            cold_white=0,
+                            rgbww_selection=0xF0,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
     def get_ww_data(self, warm_white: int, cold_white: int) -> dict:
         """
@@ -272,23 +276,21 @@ class UpdateColorRequest(Struct):
         :return: binary data packet
         """
 
-        params = dict(packet_id=0x31,
-                      red=0,
-                      green=0,
-                      blue=0,
-                      warm_white=warm_white,
-                      cold_white=cold_white,
-                      rgbww_selection=0x0F,
-                      remote_or_local=0x0F,
-                      checksum=0)
+        self._params = dict(packet_id=0x31,
+                            red=0,
+                            green=0,
+                            blue=0,
+                            warm_white=warm_white,
+                            cold_white=cold_white,
+                            rgbww_selection=0x0F,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
 
-class SetFunctionRequest(Struct):
+class SetFunctionRequest(Request):
     """
     Request for setting a function
     """
@@ -338,19 +340,17 @@ class SetFunctionRequest(Struct):
         if speed < 0 or speed > 255:
             raise ValueError("Invalid speed value! Expected 0-255, got: %d" % speed)
 
-        params = dict(packet_id=0x61,
-                      function_id=function_id.value,
-                      speed=255 - speed,
-                      remote_or_local=0x0F,
-                      checksum=0)
+        self._params = dict(packet_id=0x61,
+                            function_id=function_id.value,
+                            speed=255 - speed,
+                            remote_or_local=0x0F,
+                            checksum=0)
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
-
-        return self.build(params)
+        self._attach_checksum()
+        return self.build(self._params)
 
 
-class SetCustomFunctionRequest(Struct):
+class SetCustomFunctionRequest(Request):
     """
     Request for setting a function
     """
@@ -501,25 +501,67 @@ class SetCustomFunctionRequest(Struct):
             for channel_idx, value in enumerate(color):
                 processed_colors[color_idx][channel_idx] = value
 
-        params = dict(packet_id=0x51,
+        self._params = dict(packet_id=0x51,
 
-                      # config data
-                      speed=255 - speed,
-                      transition_type=transition_type.value,
-                      rgbww_selection=0xFF,
-                      remote_or_local=0x0F,
+                            # config data
+                            speed=255 - speed,
+                            transition_type=transition_type.value,
+                            rgbww_selection=0xFF,
+                            remote_or_local=0x0F,
 
-                      checksum=0)
+                            checksum=0)
 
         # append color data to dictionary
         for idx, color in enumerate(processed_colors):
             idx += 1
-            params["red_%d" % idx] = color[index_red]
-            params["green_%d" % idx] = color[index_green]
-            params["blue_%d" % idx] = color[index_blue]
-            params["unknown_%d" % idx] = color[index_brightness]
+            self._params["red_%d" % idx] = color[index_red]
+            self._params["green_%d" % idx] = color[index_green]
+            self._params["blue_%d" % idx] = color[index_blue]
+            self._params["unknown_%d" % idx] = color[index_brightness]
 
-        checksum = _calculate_checksum(params)
-        params["checksum"] = checksum
+        self._attach_checksum()
+        return self.build(self._params)
 
-        return self.build(params)
+
+class GetTimerRequest(Request):
+    """
+    Request for getting a timer
+    """
+
+    def __init__(self):
+        super().__init__(
+            # this is the id of the action to perform
+            "packet_id" / Int8ub,
+
+            # the id of the function to set
+            # have a look at functions.FunctionId for a complete list
+            "function_id" / Int8ub,
+            # the speed at which the function should change colors or strobe etc.
+            # originally this value is inverted, meaning 0 is fastest and 255 is slowest
+            "speed" / Int8ub,
+
+            # this value specifies if the gateway is accessible locally or remotely
+            # the remote value is only used by the official app
+            # 0x0F for local
+            # 0xF0 for remote
+            "remote_or_local" / Int8ub,
+
+            # this is a checksum of the data packet
+            "checksum" / Int8ub
+        )
+
+    def get_data(self) -> dict:
+        """
+        Generates a binary data packet containing the request to get a timer
+
+        :return: binary data packet
+        """
+
+        self._params = dict(packet_id=0x22,
+                            arg1=0x2a,
+                            arg2=0x2b,
+                            remote_or_local=0x0F,
+                            checksum=0)
+
+        self._attach_checksum()
+        return self.build(self._params)

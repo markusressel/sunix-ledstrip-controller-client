@@ -5,14 +5,9 @@ import datetime
 import socket
 from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
 
-from sunix_ledstrip_controller_client.packets.responses import (
-    StatusResponse, GetTimeResponse)
 from .controller import Controller
 from .functions import FunctionId
 from .packets import TransitionType
-from .packets.requests import (
-    StatusRequest, SetPowerRequest, UpdateColorRequest, SetFunctionRequest, SetCustomFunctionRequest, GetTimeRequest,
-    SetTimeRequest)
 
 
 class LEDStripControllerClient:
@@ -32,7 +27,7 @@ class LEDStripControllerClient:
         """
         Sends a broadcast message to the local network.
         Listening devices will respond to this broadcast with their self description
-        
+
         :return: a list of devices
         """
         discovered_controllers = []
@@ -88,29 +83,32 @@ class LEDStripControllerClient:
         :return: the current time of the controller
         """
 
+        from .packets.requests import GetTimeRequest
+        from .packets.responses import GetTimeResponse
+
         request = GetTimeRequest()
         data = request.get_data()
 
         response_data = self._send_data(host, port, data, True)
 
         # parse and check validity of response data
-        status_response = GetTimeResponse(response_data).get_response()
+        response = GetTimeResponse(response_data).get_response()
 
-        if (status_response["year"] is 0
-                and status_response["month"] is 0
-                and status_response["day"] is 0
-                and status_response["hour"] is 0
-                and status_response["minute"] is 0
-                and status_response["second"] is 0):
+        if (response["year"] is 0
+                and response["month"] is 0
+                and response["day"] is 0
+                and response["hour"] is 0
+                and response["minute"] is 0
+                and response["second"] is 0):
             return None
         else:
             dt = datetime.datetime(
-                status_response["year"] + 2000,
-                status_response["month"],
-                status_response["day"],
-                status_response["hour"],
-                status_response["minute"],
-                status_response["second"]
+                response["year"] + 2000,
+                response["month"],
+                response["day"],
+                response["hour"],
+                response["minute"],
+                response["second"]
             )
             return dt
 
@@ -123,6 +121,8 @@ class LEDStripControllerClient:
         :param date_time: the time to set
         """
 
+        from .packets.requests import SetTimeRequest
+
         request = SetTimeRequest()
         data = request.get_data(date_time)
 
@@ -131,10 +131,13 @@ class LEDStripControllerClient:
     def get_state(self, host: str, port: int) -> dict:
         """
         Updates the state of the passed in controller
-        
+
         :param host: controller host address
         :param port: controller port
         """
+
+        from .packets.requests import StatusRequest
+        from .packets.responses import StatusResponse
 
         request = StatusRequest()
         data = request.get_data()
@@ -142,9 +145,9 @@ class LEDStripControllerClient:
         response_data = self._send_data(host, port, data, True)
 
         # parse and check validity of response data
-        status_response = StatusResponse(response_data).get_response()
+        response = StatusResponse(response_data).get_response()
 
-        return status_response
+        return response
 
     def turn_on(self, host: str, port: int) -> None:
         """
@@ -153,6 +156,8 @@ class LEDStripControllerClient:
         :param host: controller host address
         :param port: controller port
         """
+
+        from .packets.requests import SetPowerRequest
 
         request = SetPowerRequest()
         data = request.get_data(True)
@@ -167,6 +172,8 @@ class LEDStripControllerClient:
         :param port: controller port
         """
 
+        from .packets.requests import SetPowerRequest
+
         request = SetPowerRequest()
         data = request.get_data(False)
 
@@ -176,7 +183,7 @@ class LEDStripControllerClient:
                   warm_white: int, cold_white: int) -> None:
         """
         Sets rgbww values for the specified controller.
-        
+
         :param host: controller host address
         :param port: controller port
         :param red: red intensity (0..255)
@@ -188,6 +195,8 @@ class LEDStripControllerClient:
 
         self._validate_color((red, green, blue, warm_white, cold_white), 5)
 
+        from .packets.requests import UpdateColorRequest
+
         request = UpdateColorRequest()
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
 
@@ -196,7 +205,7 @@ class LEDStripControllerClient:
     def set_rgb(self, host: str, port: int, red: int, green: int, blue: int) -> None:
         """
         Sets rgbw values for the specified controller.
-        
+
         :param host: controller host address
         :param port: controller port
         :param red: red intensity (0..255)
@@ -205,6 +214,8 @@ class LEDStripControllerClient:
         """
 
         self._validate_color((red, green, blue), 3)
+
+        from .packets.requests import UpdateColorRequest
 
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
@@ -223,6 +234,8 @@ class LEDStripControllerClient:
 
         self._validate_color((warm_white, cold_white), 2)
 
+        from .packets.requests import UpdateColorRequest
+
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
 
@@ -230,19 +243,22 @@ class LEDStripControllerClient:
 
     def get_function_list(self) -> [FunctionId]:
         """
-        :return: a list of all supported functions 
+        :return: a list of all supported functions
         """
         return list(FunctionId)
 
     def set_function(self, host: str, port: int, function_id: FunctionId, speed: int):
         """
         Sets a function on the specified controller
-        
+
         :param host: controller host address
         :param port: controller port
         :param function_id: Function ID
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
+
+        from .packets.requests import SetFunctionRequest
+
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
 
@@ -265,10 +281,50 @@ class LEDStripControllerClient:
         for color in color_values:
             self._validate_color(color, len(color))
 
+        from .packets.requests import SetCustomFunctionRequest
+
         request = SetCustomFunctionRequest()
         data = request.get_data(color_values, speed, transition_type)
 
         self._send_data(host, port, data)
+
+    def get_timers(self, host: str, port: int) -> datetime:
+        """
+        Receives the current timer configurations of the specified controller
+
+        :param host: controller host address
+        :param port: controller port
+        :return: the current timer configuration of the controller
+        """
+
+        from .packets.requests import GetTimerRequest
+        from .packets.responses import GetTimerResponse
+
+        request = GetTimerRequest()
+        data = request.get_data()
+
+        response_data = self._send_data(host, port, data, True)
+
+        # parse and check validity of response data
+        response = GetTimerResponse(response_data).get_response()
+
+        if (response["year"] is 0
+                and response["month"] is 0
+                and response["day"] is 0
+                and response["hour"] is 0
+                and response["minute"] is 0
+                and response["second"] is 0):
+            return None
+        else:
+            dt = datetime.datetime(
+                response["year"] + 2000,
+                response["month"],
+                response["day"],
+                response["hour"],
+                response["minute"],
+                response["second"]
+            )
+            return dt
 
     @staticmethod
     def _send_data(host: str, port: int, data, wait_for_response: bool = False) -> bytearray or None:
