@@ -94,24 +94,21 @@ class GetTimerResponse(Response):
         super().__init__(
             "packet_id" / Int8ub,
 
-            "is_active" / Int8ub,
+            "is_active_1" / Int8ub,
 
             # (0f=15??) add 2000 to this value to get the correct year
-            "year" / Int8ub,
-            "month" / Int8ub,
-            "day" / Int8ub,
-            "hour" / Int8ub,
-            "minute" / Int8ub,
-            "second" / Int8ub,
+            "year_1" / Int8ub,
+            "month_1" / Int8ub,
+            "day_1" / Int8ub,
+            "hour_1" / Int8ub,
+            "minute_1" / Int8ub,
+            "second_1" / Int8ub,
 
-            "dayofweek" / Int8ub,
+            # repeat mask
+            "dayofweek_1" / Int8ub,
 
-            # this value specifies if only rgb, only ww or both values will be used
-            # 0xF0 will only update rgb
-            # 0x0F will only update ww
-            # 0xFF will update both
-            # 0x00 will ignore both (has no use afaik)
-            "rgbww_selection" / Int8ub,
+            # 0x61 = color, 0x00, turn_on,
+            "action_code_1" / Int8ub,
 
             # the actual color value
             "red" / Int8ub,

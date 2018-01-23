@@ -533,12 +533,8 @@ class GetTimerRequest(Request):
             # this is the id of the action to perform
             "packet_id" / Int8ub,
 
-            # the id of the function to set
-            # have a look at functions.FunctionId for a complete list
-            "function_id" / Int8ub,
-            # the speed at which the function should change colors or strobe etc.
-            # originally this value is inverted, meaning 0 is fastest and 255 is slowest
-            "speed" / Int8ub,
+            "arg1" / Int8ub,
+            "arg2" / Int8ub,
 
             # this value specifies if the gateway is accessible locally or remotely
             # the remote value is only used by the official app

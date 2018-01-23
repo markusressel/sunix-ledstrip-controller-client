@@ -1,3 +1,8 @@
+import datetime
+
+from sunix_ledstrip_controller_client.timer import Timer
+
+
 class Controller:
     """
     Device class that represents a single controller
@@ -86,7 +91,25 @@ class Controller:
         """
         :return: the current time of this controller
         """
-        return self._api.get_time(self._host, self._port)
+        response = self._api.get_time(self._host, self._port)
+
+        if (response["year"] is 0
+                and response["month"] is 0
+                and response["day"] is 0
+                and response["hour"] is 0
+                and response["minute"] is 0
+                and response["second"] is 0):
+            return None
+        else:
+            dt = datetime.datetime(
+                response["year"] + 2000,
+                response["month"],
+                response["day"],
+                response["hour"],
+                response["minute"],
+                response["second"]
+            )
+            return dt
 
     def set_time(self, date_time: datetime) -> None:
         """
@@ -209,6 +232,38 @@ class Controller:
         """
         self._api.set_custom_function(self._host, self._port, color_values, speed, transition_type)
         self.update_state()
+
+    def get_timers(self) -> [Timer]:
+        """
+        Gets the defined timers of this controller
+
+        :return: list of timers
+        """
+
+        timers_data = self._api.get_timers(self._host, self._port)
+
+        timers = []
+
+        time = extract_timer_time(timers_data)
+        pattern = extract_timer_pattern(timers_data)
+
+        for timer_idx, timer in enumerate(timers_data):
+            timer = Timer(timers["timer_enabled_%d" % timer_idx].
+                          time,
+                          pattern,
+                          timers["timer_red_%d" % timer_idx],
+                          timers["timer_green_%d" % timer_idx],
+                          timers["timer_blue_%d" % timer_idx],
+                          )
+            for channel_idx, value in enumerate(color):
+                processed_colors[color_idx][channel_idx] = value
+
+        for idx in range(6):
+            timer = Timer(
+                enabled=
+            )
+
+        return timers
 
     def update_state(self):
         """

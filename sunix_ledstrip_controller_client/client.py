@@ -94,23 +94,7 @@ class LEDStripControllerClient:
         # parse and check validity of response data
         response = GetTimeResponse(response_data).get_response()
 
-        if (response["year"] is 0
-                and response["month"] is 0
-                and response["day"] is 0
-                and response["hour"] is 0
-                and response["minute"] is 0
-                and response["second"] is 0):
-            return None
-        else:
-            dt = datetime.datetime(
-                response["year"] + 2000,
-                response["month"],
-                response["day"],
-                response["hour"],
-                response["minute"],
-                response["second"]
-            )
-            return dt
+        return response
 
     def set_time(self, host: str, port: int, date_time: datetime) -> None:
         """
@@ -288,7 +272,7 @@ class LEDStripControllerClient:
 
         self._send_data(host, port, data)
 
-    def get_timers(self, host: str, port: int) -> datetime:
+    def get_timers(self, host: str, port: int) -> dict:
         """
         Receives the current timer configurations of the specified controller
 
@@ -308,23 +292,7 @@ class LEDStripControllerClient:
         # parse and check validity of response data
         response = GetTimerResponse(response_data).get_response()
 
-        if (response["year"] is 0
-                and response["month"] is 0
-                and response["day"] is 0
-                and response["hour"] is 0
-                and response["minute"] is 0
-                and response["second"] is 0):
-            return None
-        else:
-            dt = datetime.datetime(
-                response["year"] + 2000,
-                response["month"],
-                response["day"],
-                response["hour"],
-                response["minute"],
-                response["second"]
-            )
-            return dt
+        return response
 
     @staticmethod
     def _send_data(host: str, port: int, data, wait_for_response: bool = False) -> bytearray or None:
