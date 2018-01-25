@@ -240,28 +240,32 @@ class Controller:
         :return: list of timers
         """
 
+        def extract_timer_time(data: dict, idx: int) -> datetime:
+            # TODO
+            return datetime.datetime.now()
+
+        def extract_timer_pattern(data: dict, idx: int) -> datetime:
+            # TODO
+            return datetime.datetime.now()
+
         timers_data = self._api.get_timers(self._host, self._port)
 
         timers = []
 
-        time = extract_timer_time(timers_data)
-        pattern = extract_timer_pattern(timers_data)
+        for idx in range(1, 7):
+            time = extract_timer_time(timers_data, idx)
+            pattern = extract_timer_pattern(timers_data, idx)
 
-        for timer_idx, timer in enumerate(timers_data):
-            timer = Timer(timers["timer_enabled_%d" % timer_idx].
-                          time,
-                          pattern,
-                          timers["timer_red_%d" % timer_idx],
-                          timers["timer_green_%d" % timer_idx],
-                          timers["timer_blue_%d" % timer_idx],
-                          )
-            for channel_idx, value in enumerate(color):
-                processed_colors[color_idx][channel_idx] = value
-
-        for idx in range(6):
             timer = Timer(
-                enabled=
+                enabled=timers_data["is_active_%d" % idx],
+                execution_time=time,
+                pattern=pattern,
+                red=timers_data["red_%d" % idx],
+                green=timers_data["green_%d" % idx],
+                blue=timers_data["blue_%d" % idx],
             )
+
+            timers.append(timer)
 
         return timers
 

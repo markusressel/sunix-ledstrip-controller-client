@@ -30,13 +30,13 @@ class Packet(Struct):
 
     def _evaluate_checksum(self, data: dict) -> bool:
         """
-        Checks if a checksum is corrent
+        Checks if a checksum is correct
 
         :param data: the data packet to check
         :return: True if the checksum is correct, false otherwise
         """
 
-        if not data or not data["checksum"]:
+        if not data or "checksum" not in data:
             return False
 
         expected = self._calculate_checksum(data)
