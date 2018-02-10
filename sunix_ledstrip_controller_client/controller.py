@@ -241,10 +241,26 @@ class Controller:
         """
 
         def extract_timer_time(data: dict, idx: int) -> datetime:
-            # TODO
+            year = data["year_%d" % idx] + 2000
+            month = data["month_%d" % idx]
+            day = data["day_%d" % idx]
+            minute = data["minute_%d" % idx]
+            second = data["second_%d" % idx]
+
+            # combination of constants
+            dayofweek = data["dayofweek_%d" % idx]
+
+
+
+
             return datetime.datetime.now()
 
         def extract_timer_pattern(data: dict, idx: int) -> datetime:
+            mode = data["action_code_%d" % idx]
+
+            if (mode == 0x61):
+                pass
+
             # TODO
             return datetime.datetime.now()
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 
 class Timer:
@@ -24,3 +25,26 @@ class Timer:
 
     def get_time(self):
         return self.execution_time
+
+
+class Weekday(Enum):
+    """
+    Constants that represent specific days for repeating timers
+    """
+
+    Mo = 0x02
+    Tu = 0x04
+    We = 0x08
+    Th = 0x10
+    Fr = 0x20
+    Sa = 0x40
+    Su = 0x80
+    Everyday = Mo | Tu | We | Th | Fr | Sa | Su
+    Weekdays = Mo | Tu | We | Th | Fr
+    Weekend = Sa | Su
+
+
+class Mode(Enum):
+    TurnOn = 0xf0
+    TurnOff = 0x00
+    Color = 0x61

@@ -107,6 +107,7 @@ class GetTimerResponse(Response):
             "second_1" / Int8ub,
 
             # repeat mask
+            # 0 = only once
             "dayofweek_1" / Int8ub,
 
             # 0x61 = color, 0x00, turn_on,
