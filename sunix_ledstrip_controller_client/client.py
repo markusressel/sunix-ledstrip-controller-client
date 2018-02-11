@@ -43,12 +43,8 @@ class LEDStripControllerClient:
         cs.settimeout(1)
         received_messages = []
         try:
-            # TODO: allow multiple controller detection
             while True:
                 data, address = cs.recvfrom(4096)
-                # print("Received message: \"%s\"" % data)
-                # print("Address: " + address[0])
-
                 received_messages.append(data.decode())
 
         except socket.timeout:
@@ -56,21 +52,24 @@ class LEDStripControllerClient:
                 return discovered_controllers
 
         for message in received_messages:
-            # parse received message
-            data = str.split(message, ",")
+            try:
+                # parse received message
+                data = str.split(message, ",")
 
-            # check validity
-            if len(data) == 3:
-                # extract data
-                ip = data[0]
-                hw_id = data[1]
-                model = data[2]
+                # check validity
+                if len(data) == 3:
+                    # extract data
+                    ip = data[0]
+                    hw_id = data[1]
+                    model = data[2]
 
-                # create a Controller object representation
-                controller = Controller(self, ip, Controller.DEFAULT_PORT, hw_id, model)
-                print(controller)
+                    # create a Controller object representation
+                    controller = Controller(self, ip, Controller.DEFAULT_PORT, hw_id, model)
+                    print(controller)
 
-                discovered_controllers.append(controller)
+                    discovered_controllers.append(controller)
+            except:
+                print("Error parsing discovery message: %s" % message)
 
         return discovered_controllers
 
