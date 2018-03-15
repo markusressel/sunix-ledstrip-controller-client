@@ -241,19 +241,22 @@ class Controller:
         """
 
         def extract_timer_time(data: dict, idx: int) -> datetime:
+            # combination of constants
+            dayofweek = data["dayofweek_%d" % idx]
+            if dayofweek != 0:
+                return None
+
             year = data["year_%d" % idx] + 2000
             month = data["month_%d" % idx]
             day = data["day_%d" % idx]
+            hour = data["hour_%d" % idx]
             minute = data["minute_%d" % idx]
             second = data["second_%d" % idx]
 
-            # combination of constants
-            dayofweek = data["dayofweek_%d" % idx]
+            execution_time = datetime.datetime.now().replace(day=day, month=month, year=year,
+                                                             hour=hour, minute=minute, second=second)
 
-
-
-
-            return datetime.datetime.now()
+            return execution_time
 
         def extract_timer_pattern(data: dict, idx: int) -> datetime:
             mode = data["action_code_%d" % idx]
@@ -262,12 +265,11 @@ class Controller:
                 pass
 
             # TODO
-            return datetime.datetime.now()
+            return mode
 
         timers_data = self._api.get_timers(self._host, self._port)
 
         timers = []
-
         for idx in range(1, 7):
             time = extract_timer_time(timers_data, idx)
             pattern = extract_timer_pattern(timers_data, idx)

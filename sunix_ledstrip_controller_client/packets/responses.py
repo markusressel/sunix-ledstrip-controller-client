@@ -120,6 +120,8 @@ class GetTimerResponse(Response):
             "warm_white_1" / Int8ub,
             "cold_white_1" / Int8ub,
 
+            "unknown_end_1" / Int8ub,
+
             "is_active_2" / Int8ub,
 
             # (0f=15??) add 2000 to this value to get the correct year
@@ -142,6 +144,8 @@ class GetTimerResponse(Response):
             "blue_2" / Int8ub,
             "warm_white_2" / Int8ub,
             "cold_white_2" / Int8ub,
+
+            "unknown_end_2" / Int8ub,
 
             "is_active_3" / Int8ub,
 
@@ -166,6 +170,8 @@ class GetTimerResponse(Response):
             "warm_white_3" / Int8ub,
             "cold_white_3" / Int8ub,
 
+            "unknown_end_3" / Int8ub,
+
             "is_active_4" / Int8ub,
 
             # (0f=15??) add 2000 to this value to get the correct year
@@ -188,6 +194,8 @@ class GetTimerResponse(Response):
             "blue_4" / Int8ub,
             "warm_white_4" / Int8ub,
             "cold_white_4" / Int8ub,
+
+            "unknown_end_4" / Int8ub,
 
             "is_active_5" / Int8ub,
 
@@ -212,6 +220,8 @@ class GetTimerResponse(Response):
             "warm_white_5" / Int8ub,
             "cold_white_5" / Int8ub,
 
+            "unknown_end_5" / Int8ub,
+
             "is_active_6" / Int8ub,
 
             # (0f=15??) add 2000 to this value to get the correct year
@@ -235,13 +245,8 @@ class GetTimerResponse(Response):
             "warm_white_6" / Int8ub,
             "cold_white_6" / Int8ub,
 
-            "unknown_end_1" / Int8ub,
-            "unknown_end_2" / Int8ub,
-            "unknown_end_3" / Int8ub,
-
-            "unknown_end_4" / Int8ub,
-            "unknown_end_5" / Int8ub,
             "unknown_end_6" / Int8ub,
+
             "unknown_end_7" / Int8ub,
 
             "checksum" / Int8ub
