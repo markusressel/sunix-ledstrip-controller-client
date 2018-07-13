@@ -2,7 +2,7 @@ import subprocess
 
 from setuptools import setup, find_packages
 
-VERSION_NUMBER = "2.0.0"
+VERSION_NUMBER = "2.0.1"
 
 GIT_BRANCH = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
 GIT_BRANCH = GIT_BRANCH.decode()  # convert to standard string
@@ -22,14 +22,44 @@ else:
     DEVELOPMENT_STATUS = "Development Status :: 2 - Pre-Alpha"
     VERSION_NAME = "%s-%s" % (VERSION_NUMBER, GIT_BRANCH)
 
+
+def readme_type() -> str:
+    import os
+    if os.path.exists("README.rst"):
+        return "text/x-rst"
+    if os.path.exists("README.md"):
+        return "text/markdown"
+
+
+def readme() -> [str]:
+    with open('README.rst') as f:
+        return f.read()
+
+
+def install_requirements() -> [str]:
+    return read_requirements_file("requirements.txt")
+
+
+def test_requirements() -> [str]:
+    return read_requirements_file("test_requirements.txt")
+
+
+def read_requirements_file(file_name: str):
+    with open(file_name, encoding='utf-8') as f:
+        requirements_file = f.readlines()
+    return [r.strip() for r in requirements_file]
+
+
 setup(
     name='sunix_ledstrip_controller_client',
     version=VERSION_NAME,
     description='A library for controlling the Sunix RGB / RGBWWCW WiFi LED Strip controller',
+    long_description=readme(),
+    long_description_content_type=readme_type(),
     license='GPLv3+',
     author='Markus Ressel',
     author_email='mail@markusressel.de',
-    url='https://www.markusressel.de',
+    url='https://github.com/markusressel/sunix-ledstrip-controller-client',
     packages=find_packages(),
     classifiers=[
         DEVELOPMENT_STATUS,
@@ -40,8 +70,6 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7'
     ],
-    install_requires=[
-        'construct',
-        'typing;python_version<"3.5"'
-    ]
+    install_requires=install_requirements(),
+    tests_require=test_requirements()
 )

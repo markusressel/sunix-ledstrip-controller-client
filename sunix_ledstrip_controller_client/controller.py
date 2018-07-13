@@ -271,16 +271,22 @@ class Controller:
 
         timers = []
         for idx in range(1, 7):
+            enabled = Timer.STATE_ENABLED == timers_data["is_active_%d" % idx]
+
             time = extract_timer_time(timers_data, idx)
             pattern = extract_timer_pattern(timers_data, idx)
 
+            red = timers_data["red_%d" % idx]
+            green = timers_data["green_%d" % idx]
+            blue = timers_data["blue_%d" % idx]
+
             timer = Timer(
-                enabled=timers_data["is_active_%d" % idx],
+                enabled=enabled,
                 execution_time=time,
                 pattern=pattern,
-                red=timers_data["red_%d" % idx],
-                green=timers_data["green_%d" % idx],
-                blue=timers_data["blue_%d" % idx],
+                red=red,
+                green=green,
+                blue=blue,
             )
 
             timers.append(timer)

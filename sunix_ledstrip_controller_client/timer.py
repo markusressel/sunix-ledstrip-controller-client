@@ -7,6 +7,9 @@ class Timer:
     Representation of a single timer configuration
     """
 
+    STATE_ENABLED = 0xf0
+    STATE_DISABLED = 0x00
+
     def __init__(self, enabled: bool,
                  execution_time: datetime, pattern: any,
                  red: int, green: int, blue: int):
@@ -61,6 +64,10 @@ class Weekday(Enum):
 
 
 class Mode(Enum):
+    """
+    Constants for specific action modes of a timer
+    """
+
     TurnOn = 0xf0
     TurnOff = 0x00
     Color = 0x61
