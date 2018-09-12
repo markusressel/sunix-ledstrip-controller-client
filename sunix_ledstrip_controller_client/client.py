@@ -303,24 +303,24 @@ class LEDStripControllerClient:
         :param data: the binary(!) data to send
         """
 
-        try:
-            s = socket.socket()
-            s.connect((host, port))
+        with socket.socket() as s:
+            try:
+                s.connect((host, port))
 
-            s.send(data)
+                s.send(data)
 
-            if wait_for_response:
-                s.setblocking(True)
-                s.settimeout(1)
+                if wait_for_response:
+                    s.setblocking(True)
+                    s.settimeout(1)
 
-                data = s.recv(2048)
+                    data = s.recv(2048)
 
-                return data
-            else:
-                return None
+                    return data
+                else:
+                    return None
 
-        except socket.timeout:
-            print("timeout")
+            except socket.timeout:
+                print("timeout")
 
     @staticmethod
     def _validate_color(color: (int, int, int), color_channels: int) -> None:
