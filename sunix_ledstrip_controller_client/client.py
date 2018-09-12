@@ -305,16 +305,14 @@ class LEDStripControllerClient:
 
         with socket.socket() as s:
             try:
-                s.connect((host, port))
+                s.settimeout(1)
 
+                s.connect((host, port))
                 s.send(data)
 
                 if wait_for_response:
                     s.setblocking(True)
-                    s.settimeout(1)
-
                     data = s.recv(2048)
-
                     return data
                 else:
                     return None
