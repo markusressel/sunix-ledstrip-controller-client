@@ -18,7 +18,7 @@ class Packet(Struct):
 
         checksum = 0
         for param in params:
-            if param == "checksum":
+            if param == "checksum" or param == "_io":
                 continue
 
             checksum += params[param]
