@@ -304,21 +304,17 @@ class LEDStripControllerClient:
         """
 
         with socket.socket() as s:
-            try:
-                s.settimeout(1)
+            s.settimeout(1)
 
-                s.connect((host, port))
-                s.send(data)
+            s.connect((host, port))
+            s.send(data)
 
-                if wait_for_response:
-                    s.setblocking(True)
-                    data = s.recv(2048)
-                    return data
-                else:
-                    return None
-
-            except socket.timeout:
-                print("timeout")
+            if wait_for_response:
+                s.setblocking(True)
+                data = s.recv(2048)
+                return data
+            else:
+                return None
 
     @staticmethod
     def _validate_color(color: (int, int, int), color_channels: int) -> None:
