@@ -50,6 +50,12 @@ class Controller:
 
         self.update_state()
 
+    def __hash__(self):
+        return hash((self._host, self._port, self._device_name, self._hardware_id))
+
+    def __eq__(self, other):
+        return other is not None and self._host == other.get_host() and self._port == other._port and self._device_name == other._device_name and self._hardware_id == other._hardware_id
+
     def __str__(self):
         return ("Host: %s\n" % (self.get_host()) +
                 "Port: %s\n" % (self.get_port()) +

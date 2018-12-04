@@ -32,46 +32,70 @@ class LEDStripControllerClient:
         """
         discovered_controllers = []
 
-        cs = socket.socket(AF_INET, SOCK_DGRAM)
-        cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+        # use discovery multiple times as controllers sometimes just don't respond
+        for i in range(3):
+            discovered_controllers = self.__merge_controllers(
+                self._discover_controllers(),
+                discovered_controllers)
 
-        # send a local broadcast via udp with a "magic packet"
-        cs.sendto(self._discovery_message, ('255.255.255.255', self._discovery_port))
+        return discovered_controllers
 
-        cs.setblocking(True)
-        cs.settimeout(1)
-        received_messages = []
-        try:
-            while True:
-                data, address = cs.recvfrom(4096)
-                received_messages.append(data.decode())
+    @staticmethod
+    def __merge_controllers(new, old) -> [Controller]:
+        merged = set(new)
+        merged.update(old)
 
-        except socket.timeout:
-            if len(received_messages) <= 0:
-                return discovered_controllers
+        return list(merged)
+
+    def _discover_controllers(self) -> [Controller]:
+        """
+        Internally used discovery method
+        :return: list of discovered devices
+        """
+
+        discovered_controllers = []
+        with socket.socket(AF_INET, SOCK_DGRAM) as cs:
+            cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+            cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+            # send a local broadcast via udp with a "magic packet"
+            cs.sendto(self._discovery_message, ('255.255.255.255', self._discovery_port))
+
+            cs.setblocking(True)
+            cs.settimeout(1)
+            received_messages = []
+            try:
+                while True:
+                    data, address = cs.recvfrom(4096)
+                    received_messages.append(data.decode())
+
+            except socket.timeout:
+                if len(received_messages) <= 0:
+                    return []
 
         for message in received_messages:
             try:
-                # parse received message
-                data = str.split(message, ",")
-
-                # check validity
-                if len(data) == 3:
-                    # extract data
-                    ip = data[0]
-                    hw_id = data[1]
-                    model = data[2]
-
-                    # create a Controller object representation
-                    controller = Controller(self, ip, Controller.DEFAULT_PORT, hw_id, model)
-                    print(controller)
-
-                    discovered_controllers.append(controller)
+                controller = self._parse_discovery_response(message)
+                discovered_controllers.append(controller)
             except:
                 print("Error parsing discovery message: %s" % message)
+                return None
 
         return discovered_controllers
+
+    def _parse_discovery_response(self, message: str) -> Controller or None:
+        # parse received message
+        data = str.split(message, ",")
+
+        # check validity
+        if len(data) == 3:
+            # extract data
+            ip = data[0]
+            hw_id = data[1]
+            model = data[2]
+
+            # create a Controller object representation
+            return Controller(self, ip, Controller.DEFAULT_PORT, hw_id, model)
 
     def get_time(self, host: str, port: int) -> datetime:
         """
