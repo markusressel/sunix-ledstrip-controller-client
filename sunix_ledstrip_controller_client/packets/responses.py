@@ -1,4 +1,4 @@
-from construct import Int8ub
+from construct import Int8ub, Container
 
 from sunix_ledstrip_controller_client.packets import Packet
 
@@ -9,20 +9,20 @@ class Response(Packet):
     """
     _data = []
 
-    def evaluate(self) -> bool:
+    def evaluate(self, container: Container) -> bool:
         """
         :return: True if this response is valid, false otherwise
         """
-        return self._evaluate_checksum(self.parse(self._data))
+        return self._evaluate_checksum(container)
 
-    def get_response(self) -> dict:
+    def parse_data(self, data: bytearray) -> Container:
         """
         :return: the response in the expected format
         """
-        if not self.evaluate():
-            raise ValueError("invalid or missing checksum")
-
-        return self.parse(self._data)
+        self._data = data
+        parsed = self.parse(self._data)
+        self.evaluate(parsed)
+        return parsed
 
 
 class StatusResponse(Response):
@@ -30,7 +30,7 @@ class StatusResponse(Response):
     The response to the StatusRequest request
     """
 
-    def __init__(self, data: bytearray):
+    def __init__(self):
         super().__init__(
             "packet_id" / Int8ub,
 
@@ -53,15 +53,13 @@ class StatusResponse(Response):
             "checksum" / Int8ub
         )
 
-        self._data = data
-
 
 class GetTimeResponse(Response):
     """
     The response to the GetTimeRequest request
     """
 
-    def __init__(self, data: bytearray):
+    def __init__(self):
         super().__init__(
             "packet_id" / Int8ub,
 
@@ -82,15 +80,13 @@ class GetTimeResponse(Response):
             "checksum" / Int8ub
         )
 
-        self._data = data
-
 
 class GetTimerResponse(Response):
     """
     The response to the GetTimerRequest request
     """
 
-    def __init__(self, data: bytearray):
+    def __init__(self):
         super().__init__(
             "packet_id" / Int8ub,
 
@@ -258,5 +254,3 @@ class GetTimerResponse(Response):
         #     # int.from_bytes(byte, byteorder='big', signed=False)
         #     data_as_int.append(byte)
         #     data_as_hex.append(hex(byte))
-
-        self._data = data

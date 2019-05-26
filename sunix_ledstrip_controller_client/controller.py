@@ -27,9 +27,12 @@ class Controller:
                  hardware_id: str = None, model: str = None):
         """
         Creates a new controller device object
-        
+
+        :param api: the api instance
         :param host: host address of the controller device
         :param port: the port on which the controller device is listening
+        :param hardware_id: controller hardware_id (will be filled in by autodiscovery)
+        :param model: controller model (will be filled in by autodiscovery)
         """
 
         self._api = api

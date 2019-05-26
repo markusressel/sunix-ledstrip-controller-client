@@ -8,7 +8,8 @@ class Packet(Struct):
     Base class for a network packet
     """
 
-    def _calculate_checksum(self, params: dict) -> int:
+    @staticmethod
+    def _calculate_checksum(params: dict) -> int:
         """
         Calculates the checksum for a request
 
@@ -28,19 +29,21 @@ class Packet(Struct):
 
         return checksum
 
-    def _evaluate_checksum(self, data: dict) -> bool:
+    def _evaluate_checksum(self, data: dict):
         """
-        Checks if a checksum is correct
+        Checks if a checksum is correct.
+        Raises an error if something is wrong
 
         :param data: the data packet to check
-        :return: True if the checksum is correct, false otherwise
         """
 
         if not data or "checksum" not in data:
-            return False
+            raise AssertionError("Missing checksum!")
 
         expected = self._calculate_checksum(data)
-        return data["checksum"] == expected
+        actual = data["checksum"]
+        if actual != expected:
+            raise AssertionError("Unexpected checksum! Expected '{}' but got '{}'".format(expected, actual))
 
 
 class TransitionType(Enum):

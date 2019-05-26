@@ -43,7 +43,7 @@ class GetTimeRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self) -> dict:
+    def get_data(self) -> bytes:
         """
         Generates a binary data packet containing the a request for the current time of the controller
         :return: binary data packet
@@ -90,7 +90,7 @@ class SetTimeRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self, dt: datetime) -> dict:
+    def get_data(self, dt: datetime) -> bytes:
         """
         Generates a binary data packet containing the a request for the current time of the controller
         :return: binary data packet
@@ -129,7 +129,7 @@ class StatusRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self) -> dict:
+    def get_data(self) -> bytes:
         """
         Generates a binary data packet containing the a request for the current state of the controller
         :return: binary data packet
@@ -168,7 +168,7 @@ class SetPowerRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self, on: bool) -> dict:
+    def get_data(self, on: bool) -> bytes:
         """
         Generates a binary data packet containing the request to change the power state of the controller
 
@@ -220,7 +220,7 @@ class UpdateColorRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_rgbww_data(self, red: int, green: int, blue: int, warm_white: int, cold_white: int) -> dict:
+    def get_rgbww_data(self, red: int, green: int, blue: int, warm_white: int, cold_white: int) -> bytes:
         """
         Generates a binary data packet containing the request to change colors for all 5 channels
         
@@ -244,7 +244,7 @@ class UpdateColorRequest(Request):
         self._attach_checksum()
         return self.build(self._params)
 
-    def get_rgb_data(self, red: int, green: int, blue: int) -> dict:
+    def get_rgb_data(self, red: int, green: int, blue: int) -> bytes:
         """
         Generates a binary data packet containing the request to change rgb colors
 
@@ -267,7 +267,7 @@ class UpdateColorRequest(Request):
         self._attach_checksum()
         return self.build(self._params)
 
-    def get_ww_data(self, warm_white: int, cold_white: int) -> dict:
+    def get_ww_data(self, warm_white: int, cold_white: int) -> bytes:
         """
         Generates a binary data packet containing the request to change ww colors
 
@@ -317,7 +317,7 @@ class SetFunctionRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self, function_id: FunctionId or str or int, speed: int) -> dict:
+    def get_data(self, function_id: FunctionId or str or int, speed: int) -> bytes:
         """
         Generates a binary data packet containing the request to set a function
         
@@ -463,7 +463,7 @@ class SetCustomFunctionRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self, colors: [(int, int, int, int)], speed: int, transition_type: TransitionType) -> dict:
+    def get_data(self, colors: [(int, int, int, int)], speed: int, transition_type: TransitionType) -> bytes:
         """
         Generates a binary data packet containing the request to set a function
 
@@ -546,7 +546,7 @@ class GetTimerRequest(Request):
             "checksum" / Int8ub
         )
 
-    def get_data(self) -> dict:
+    def get_data(self) -> bytes:
         """
         Generates a binary data packet containing the request to get a timer
 

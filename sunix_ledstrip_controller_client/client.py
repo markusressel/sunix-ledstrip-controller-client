@@ -18,10 +18,15 @@ class LEDStripControllerClient:
     _discovery_port = 48899
     _discovery_message = b'HF-A11ASSISTHREAD'
 
-    def __init__(self):
+    def __init__(self, reuse_connections: bool = False):
         """
         Creates a new client object
+
+        :param reuse_connections: if set to True tries to reuse the underlying socket for each controller as long
+                                  as possible, otherwise a new socket will be used for each request
         """
+        self._reuse_connections = reuse_connections
+        self._connections = {}
 
     def discover_controllers(self) -> [Controller]:
         """
@@ -73,6 +78,20 @@ class LEDStripControllerClient:
 
         return discovered_controllers
 
+    @staticmethod
+    def _connect(host: str, port: int) -> socket:
+        """
+        Connects to the given host
+        :param host: target host address
+        :param port: target port
+        :return: connected socket
+        """
+        s = socket.socket()
+        s.settimeout(1)
+        s.setblocking(True)
+        s.connect((host, port))
+        return s
+
     def get_time(self, host: str, port: int) -> datetime:
         """
         Receives the current time of the specified controller
@@ -81,19 +100,15 @@ class LEDStripControllerClient:
         :param port: controller port
         :return: the current time of the controller
         """
-
         from .packets.requests import GetTimeRequest
         from .packets.responses import GetTimeResponse
 
         request = GetTimeRequest()
+        response = GetTimeResponse()
+
         data = request.get_data()
-
-        response_data = self._send_data(host, port, data, True)
-
-        # parse and check validity of response data
-        response = GetTimeResponse(response_data).get_response()
-
-        return response
+        response_data = self._send_data(host, port, data, response.sizeof())
+        return response.parse_data(response_data)
 
     def set_time(self, host: str, port: int, date_time: datetime) -> None:
         """
@@ -103,13 +118,12 @@ class LEDStripControllerClient:
         :param port: controller port
         :param date_time: the time to set
         """
-
         from .packets.requests import SetTimeRequest
 
         request = SetTimeRequest()
         data = request.get_data(date_time)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, request.sizeof())
 
     def get_state(self, host: str, port: int) -> dict:
         """
@@ -118,19 +132,15 @@ class LEDStripControllerClient:
         :param host: controller host address
         :param port: controller port
         """
-
         from .packets.requests import StatusRequest
         from .packets.responses import StatusResponse
 
         request = StatusRequest()
+        response = StatusResponse()
+
         data = request.get_data()
-
-        response_data = self._send_data(host, port, data, True)
-
-        # parse and check validity of response data
-        response = StatusResponse(response_data).get_response()
-
-        return response
+        response_data = self._send_data(host, port, data, response.sizeof())
+        return response.parse_data(response_data)
 
     def turn_on(self, host: str, port: int) -> None:
         """
@@ -139,13 +149,12 @@ class LEDStripControllerClient:
         :param host: controller host address
         :param port: controller port
         """
-
         from .packets.requests import SetPowerRequest
 
         request = SetPowerRequest()
         data = request.get_data(True)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, request.sizeof())
 
     def turn_off(self, host: str, port: int) -> None:
         """
@@ -154,13 +163,12 @@ class LEDStripControllerClient:
         :param host: controller host address
         :param port: controller port
         """
-
         from .packets.requests import SetPowerRequest
 
         request = SetPowerRequest()
         data = request.get_data(False)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, request.sizeof())
 
     def set_rgbww(self, host: str, port: int, red: int, green: int, blue: int,
                   warm_white: int, cold_white: int) -> None:
@@ -175,7 +183,6 @@ class LEDStripControllerClient:
         :param warm_white: warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-
         self._validate_color((red, green, blue, warm_white, cold_white), 5)
 
         from .packets.requests import UpdateColorRequest
@@ -195,7 +202,6 @@ class LEDStripControllerClient:
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
         """
-
         self._validate_color((red, green, blue), 3)
 
         from .packets.requests import UpdateColorRequest
@@ -214,7 +220,6 @@ class LEDStripControllerClient:
         :param warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-
         self._validate_color((warm_white, cold_white), 2)
 
         from .packets.requests import UpdateColorRequest
@@ -239,7 +244,6 @@ class LEDStripControllerClient:
         :param function_id: Function ID
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
-
         from .packets.requests import SetFunctionRequest
 
         request = SetFunctionRequest()
@@ -260,7 +264,6 @@ class LEDStripControllerClient:
         :param transition_type: the transition type between colors
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
-
         for color in color_values:
             self._validate_color(color, len(color))
 
@@ -279,22 +282,18 @@ class LEDStripControllerClient:
         :param port: controller port
         :return: the current timer configuration of the controller
         """
-
         from .packets.requests import GetTimerRequest
         from .packets.responses import GetTimerResponse
 
         request = GetTimerRequest()
+        response = GetTimerResponse()
+
         data = request.get_data()
+        response_data = self._send_data(host, port, data, response.sizeof())
+        return response.parse_data(response_data)
 
-        response_data = self._send_data(host, port, data, True)
-
-        # parse and check validity of response data
-        response = GetTimerResponse(response_data).get_response()
-
-        return response
-
-    @staticmethod
-    def _send_data(host: str, port: int, data, wait_for_response: bool = False) -> bytearray or None:
+    def _send_data(self, host: str, port: int, data: bytes,
+                   response_size: int = 0) -> bytearray or None:
         """
         Sends a binary data request to the specified host and port.
         
@@ -303,18 +302,30 @@ class LEDStripControllerClient:
         :param data: the binary(!) data to send
         """
 
-        with socket.socket() as s:
-            s.settimeout(1)
-
-            s.connect((host, port))
-            s.send(data)
-
-            if wait_for_response:
-                s.setblocking(True)
-                data = s.recv(2048)
+        def receive_response() -> bytes or None:
+            if response_size is not None and response_size > 0:
+                if self._reuse_connections:
+                    data = s.recv(response_size, socket.MSG_WAITALL)
+                else:
+                    data = s.recv(2048)
                 return data
             else:
                 return None
+
+        if self._reuse_connections:
+            connection_key = "{}:{}".format(host, port)
+            if connection_key not in self._connections:
+                s = self._connect(host, port)
+                self._connections[connection_key] = s
+
+            s = self._connections.get(connection_key)
+            s.send(data)
+
+            return receive_response()
+        else:
+            with self._connect(host, port) as s:
+                s.send(data)
+                return receive_response()
 
     @staticmethod
     def _validate_color(color: (int, int, int), color_channels: int) -> None:
