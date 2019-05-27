@@ -60,6 +60,18 @@ class Controller:
                 "Hardware ID: %s\n" % (self.get_hardware_id()) +
                 "Model: %s" % (self.get_model()))
 
+    def connect(self):
+        """
+        Connects to the controller
+        """
+        self._api.connect_socket(self._host, self._port)
+
+    def disconnect(self):
+        """
+        Disconnects from the controller
+        """
+        self._api.disconnect_socket(self._host, self._port)
+
     def get_host(self) -> str or None:
         """
         :return: The IP/Host address of this device  

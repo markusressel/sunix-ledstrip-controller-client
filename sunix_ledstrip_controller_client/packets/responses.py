@@ -54,6 +54,20 @@ class StatusResponse(Response):
         )
 
 
+class SetTimeResponse(Response):
+    """
+    The response to the SetTimeRequest request
+    """
+
+    def __init__(self):
+        super().__init__(
+            "packet_id" / Int8ub,
+            "device_name" / Int8ub,
+            "success" / Int8ub,
+            "checksum" / Int8ub
+        )
+
+
 class GetTimeResponse(Response):
     """
     The response to the GetTimeRequest request

@@ -79,18 +79,50 @@ class LEDStripControllerClient:
         return discovered_controllers
 
     @staticmethod
-    def _connect(host: str, port: int) -> socket:
+    def _create_socket() -> socket:
         """
-        Connects to the given host
-        :param host: target host address
-        :param port: target port
-        :return: connected socket
+        Creates a new socket
+        :return: socket
         """
         s = socket.socket()
         s.settimeout(1)
         s.setblocking(True)
-        s.connect((host, port))
         return s
+
+    def connect_socket(self, host: str, port: int, reconnect: bool = False) -> socket:
+        """
+        Connects to the given host
+        :param host: target host address
+        :param port: target port
+        :param reconnect: if True a new socket is created even if there is already an existing one,
+                          otherwise an existing socket is reused
+        :return: connected socket
+        """
+        # TODO: NEEDS TESTING does the controller send updates even when changes from other clients occur?
+        connection_key = "{}:{}".format(host, port)
+        if reconnect or connection_key not in self._connections:
+            s = self._create_socket()
+            self._connections[connection_key] = s
+            s.connect((host, port))
+        else:
+            s = self._connections.get(connection_key)
+
+        return s
+
+    def disconnect_socket(self, host: str, port: int):
+        """
+        Disconnects from the given host
+        :param host: target host address
+        :param port: target port
+        """
+        connection_key = "{}:{}".format(host, port)
+        if connection_key in self._connections:
+            s = self._connections[connection_key]
+            try:
+                s.shutdown(socket.SHUT_RDWR)
+                s.close()
+            finally:
+                self._connections.pop(connection_key, None)
 
     def get_time(self, host: str, port: int) -> datetime:
         """
@@ -110,7 +142,7 @@ class LEDStripControllerClient:
         response_data = self._send_data(host, port, data, response.sizeof())
         return response.parse_data(response_data)
 
-    def set_time(self, host: str, port: int, date_time: datetime) -> None:
+    def set_time(self, host: str, port: int, date_time: datetime) -> dict:
         """
         Sets the internal time of the controller
 
@@ -119,11 +151,14 @@ class LEDStripControllerClient:
         :param date_time: the time to set
         """
         from .packets.requests import SetTimeRequest
+        from .packets.responses import SetTimeResponse
 
         request = SetTimeRequest()
+        response = SetTimeResponse()
         data = request.get_data(date_time)
 
-        self._send_data(host, port, data, request.sizeof())
+        response_data = self._send_data(host, port, data, response.sizeof())
+        return response.parse_data(response_data)
 
     def get_state(self, host: str, port: int) -> dict:
         """
@@ -190,7 +225,7 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, 0)
 
     def set_rgb(self, host: str, port: int, red: int, green: int, blue: int) -> None:
         """
@@ -209,7 +244,7 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, 0)
 
     def set_ww(self, host: str, port: int, warm_white: int, cold_white: int) -> None:
         """
@@ -227,7 +262,7 @@ class LEDStripControllerClient:
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, 0)
 
     def get_function_list(self) -> [FunctionId]:
         """
@@ -249,7 +284,7 @@ class LEDStripControllerClient:
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, 0)
 
     def set_custom_function(self, host: str, port: int, color_values: [(int, int, int, int)],
                             speed: int, transition_type: TransitionType = TransitionType.Gradual):
@@ -272,7 +307,7 @@ class LEDStripControllerClient:
         request = SetCustomFunctionRequest()
         data = request.get_data(color_values, speed, transition_type)
 
-        self._send_data(host, port, data)
+        self._send_data(host, port, data, 0)
 
     def get_timers(self, host: str, port: int) -> dict:
         """
@@ -302,30 +337,31 @@ class LEDStripControllerClient:
         :param data: the binary(!) data to send
         """
 
-        def receive_response() -> bytes or None:
+        def receive_response() -> bytes:
             if response_size is not None and response_size > 0:
+                chunks = []
+                bytes_recd = 0
+                while bytes_recd < response_size:
+                    chunk = s.recv(min(response_size - bytes_recd, 2048))
+                    if chunk == b'':
+                        raise RuntimeError("socket connection broken")
+                    chunks.append(chunk)
+                    bytes_recd = bytes_recd + len(chunk)
+                return b''.join(chunks)
+
+        reconnect = not self._reuse_connections
+        for i in range(3):
+            try:
                 if self._reuse_connections:
-                    data = s.recv(response_size, socket.MSG_WAITALL)
+                    s = self.connect_socket(host, port, reconnect)
+                    s.send(data)
+                    return receive_response()
                 else:
-                    data = s.recv(2048)
-                return data
-            else:
-                return None
-
-        if self._reuse_connections:
-            connection_key = "{}:{}".format(host, port)
-            if connection_key not in self._connections:
-                s = self._connect(host, port)
-                self._connections[connection_key] = s
-
-            s = self._connections.get(connection_key)
-            s.send(data)
-
-            return receive_response()
-        else:
-            with self._connect(host, port) as s:
-                s.send(data)
-                return receive_response()
+                    with self.connect_socket(host, port, reconnect) as s:
+                        s.send(data)
+                        return receive_response()
+            except socket.error as e:
+                reconnect = True
 
     @staticmethod
     def _validate_color(color: (int, int, int), color_channels: int) -> None:
