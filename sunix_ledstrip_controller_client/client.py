@@ -78,17 +78,6 @@ class LEDStripControllerClient:
 
         return discovered_controllers
 
-    @staticmethod
-    def _create_socket() -> socket:
-        """
-        Creates a new socket
-        :return: socket
-        """
-        s = socket.socket()
-        s.settimeout(1)
-        s.setblocking(True)
-        return s
-
     def connect_socket(self, host: str, port: int, reconnect: bool = False) -> socket:
         """
         Connects to the given host
@@ -104,7 +93,9 @@ class LEDStripControllerClient:
             self.disconnect_socket(host, port)
 
         if connection_key not in self._connections:
-            s = self._create_socket()
+            s = socket.socket()
+            s.settimeout(1)
+            s.setblocking(True)
             self._connections[connection_key] = s
             s.connect((host, port))
         else:
