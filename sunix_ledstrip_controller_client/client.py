@@ -18,14 +18,14 @@ class LEDStripControllerClient:
     _discovery_port = 48899
     _discovery_message = b'HF-A11ASSISTHREAD'
 
-    def __init__(self, reuse_connections: bool = False):
+    def __init__(self, keep_connections: bool = False):
         """
         Creates a new client object
 
-        :param reuse_connections: if set to True tries to reuse the underlying socket for each controller as long
+        :param keep_connections: if set to True tries to reuse the underlying socket for each controller as long
                                   as possible, otherwise a new socket will be used for each request
         """
-        self._reuse_connections = reuse_connections
+        self._keep_connections = keep_connections
         self._connections = {}
 
     def discover_controllers(self) -> [Controller]:
@@ -354,10 +354,10 @@ class LEDStripControllerClient:
                     bytes_recd = bytes_recd + len(chunk)
                 return b''.join(chunks)
 
-        reconnect = not self._reuse_connections
+        reconnect = not self._keep_connections
         for i in range(3):
             try:
-                if self._reuse_connections:
+                if self._keep_connections:
                     s = self.connect_socket(host, port, reconnect)
                     s.send(data)
                     return receive_response()

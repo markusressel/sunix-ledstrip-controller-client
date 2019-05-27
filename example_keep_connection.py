@@ -1,7 +1,7 @@
 from sunix_ledstrip_controller_client import LEDStripControllerClient, FunctionId, TransitionType
 from sunix_ledstrip_controller_client.controller import Controller
 
-api = LEDStripControllerClient(reuse_connections=True)
+api = LEDStripControllerClient(keep_connections=True)
 
 device = Controller(api, "192.168.2.33")
 
