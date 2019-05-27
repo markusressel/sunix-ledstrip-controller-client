@@ -100,7 +100,10 @@ class LEDStripControllerClient:
         """
         # TODO: NEEDS TESTING does the controller send updates even when changes from other clients occur?
         connection_key = "{}:{}".format(host, port)
-        if reconnect or connection_key not in self._connections:
+        if reconnect:
+            self.disconnect_socket(host, port)
+
+        if connection_key not in self._connections:
             s = self._create_socket()
             self._connections[connection_key] = s
             s.connect((host, port))
@@ -121,6 +124,8 @@ class LEDStripControllerClient:
             try:
                 s.shutdown(socket.SHUT_RDWR)
                 s.close()
+            except Exception as e:
+                pass
             finally:
                 self._connections.pop(connection_key, None)
 
