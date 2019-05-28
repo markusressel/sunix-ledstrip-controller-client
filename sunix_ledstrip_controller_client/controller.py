@@ -1,5 +1,6 @@
 import datetime
 
+from sunix_ledstrip_controller_client.packets.responses import StatusResponse
 from sunix_ledstrip_controller_client.timer import Timer
 
 
@@ -108,21 +109,21 @@ class Controller:
         """
         response = self._api.get_time(self._host, self._port)
 
-        if (response["year"] is 0
-                and response["month"] is 0
-                and response["day"] is 0
-                and response["hour"] is 0
-                and response["minute"] is 0
-                and response["second"] is 0):
+        if (response.year is 0
+                and response.month is 0
+                and response.day is 0
+                and response.hour is 0
+                and response.minute is 0
+                and response.second is 0):
             return None
         else:
             dt = datetime.datetime(
-                response["year"] + 2000,
-                response["month"],
-                response["day"],
-                response["hour"],
-                response["minute"],
-                response["second"]
+                response.year + 2000,
+                response.month,
+                response.day,
+                response.hour,
+                response.minute,
+                response.second
             )
             return dt
 
@@ -192,8 +193,8 @@ class Controller:
         :param warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-        self._api.set_ww(self._host, self._port, cold_white, warm_white)
-        self.update_state()
+        state = self._api.set_ww(self._host, self._port, cold_white, warm_white)
+        self.update_state(state)
 
     def get_brightness(self) -> int or None:
         """
@@ -257,16 +258,16 @@ class Controller:
 
         def extract_timer_time(data: dict, idx: int) -> datetime:
             # combination of constants
-            dayofweek = data["dayofweek_%d" % idx]
+            dayofweek = data["dayofweek_{}".format(idx)]
             if dayofweek != 0:
                 return None
 
-            year = data["year_%d" % idx] + 2000
-            month = data["month_%d" % idx]
-            day = data["day_%d" % idx]
-            hour = data["hour_%d" % idx]
-            minute = data["minute_%d" % idx]
-            second = data["second_%d" % idx]
+            year = data["year_{}".format(idx)] + 2000
+            month = data["month_{}".format(idx)]
+            day = data["day_{}".format(idx)]
+            hour = data["hour_{}".format(idx)]
+            minute = data["minute_{}".format(idx)]
+            second = data["second_{}".format(idx)]
 
             execution_time = datetime.datetime.now().replace(day=day, month=month, year=year,
                                                              hour=hour, minute=minute, second=second)
@@ -274,9 +275,9 @@ class Controller:
             return execution_time
 
         def extract_timer_pattern(data: dict, idx: int) -> datetime:
-            mode = data["action_code_%d" % idx]
+            mode = data["action_code_{}".format(idx)]
 
-            if (mode == 0x61):
+            if mode == 0x61:
                 pass
 
             # TODO
@@ -286,14 +287,14 @@ class Controller:
 
         timers = []
         for idx in range(1, 7):
-            enabled = Timer.STATE_ENABLED == timers_data["is_active_%d" % idx]
+            enabled = Timer.STATE_ENABLED == timers_data["is_active_{}".format(idx)]
 
             time = extract_timer_time(timers_data, idx)
             pattern = extract_timer_pattern(timers_data, idx)
 
-            red = timers_data["red_%d" % idx]
-            green = timers_data["green_%d" % idx]
-            blue = timers_data["blue_%d" % idx]
+            red = timers_data["red_{}".format(idx)]
+            green = timers_data["green_{}".format(idx)]
+            blue = timers_data["blue_{}".format(idx)]
 
             timer = Timer(
                 enabled=enabled,
@@ -308,21 +309,24 @@ class Controller:
 
         return timers
 
-    def update_state(self):
+    def update_state(self, state: StatusResponse = None):
         """
         Updates the state of this controller
+
+        :param state: the state to set (optional)
         """
-        state = self._api.get_state(self._host, self._port)
+        if state is None:
+            state = self._api.get_state(self._host, self._port)
 
         # update the controller values from the response
-        self._device_name = state["device_name"]
-        self._power_state = state["power_status"]
-        self._function = state["mode"]
-        self._function_speed = state["speed"]
+        self._device_name = state.device_name
+        self._power_state = state.power_status
+        self._function = state.mode
+        self._function_speed = state.speed
         self._rgbww = (
-            state["red"],
-            state["green"],
-            state["blue"],
-            state["warm_white"],
-            state["cold_white"]
+            state.red,
+            state.green,
+            state.blue,
+            state.warm_white,
+            state.cold_white
         )

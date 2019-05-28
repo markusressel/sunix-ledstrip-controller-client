@@ -8,6 +8,9 @@ class Packet(Struct):
     Base class for a network packet
     """
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
     @staticmethod
     def _calculate_checksum(params: dict) -> int:
         """

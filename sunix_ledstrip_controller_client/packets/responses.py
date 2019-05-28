@@ -7,21 +7,29 @@ class Response(Packet):
     """
     Base class for a response packet
     """
-    _data = []
+    _raw_data = []
 
-    def evaluate(self, container: Container) -> bool:
+    checksum = -1
+
+    def evaluate(self, container: Container):
         """
         :return: True if this response is valid, false otherwise
         """
-        return self._evaluate_checksum(container)
+        self._evaluate_checksum(container)
 
-    def parse_data(self, data: bytearray) -> Container:
+    def parse_data(self, data: bytes) -> Container:
         """
         :return: the response in the expected format
         """
-        self._data = data
-        parsed = self.parse(self._data)
+        self._raw_data = data
+        parsed = self.parse(self._raw_data)
+
         self.evaluate(parsed)
+
+        # save data on this object for easy access
+        for k, v in parsed.items():
+            setattr(self, k, v)
+
         return parsed
 
 
@@ -30,11 +38,28 @@ class StatusResponse(Response):
     The response to the StatusRequest request
     """
 
+    packet_id = 129
+    device_name = 37
+
+    power_status = -1
+    mode = -1
+    run_status = -1
+    speed = -1
+
+    red = -1
+    green = -1
+    blue = -1
+    warm_white = -1
+    unknown1 = -1
+    cold_white = -1
+
+    unknown2 = -1
+
     def __init__(self):
         super().__init__(
-            "packet_id" / Int8ub,
+            "packet_id" / Int8ub,  # == 129
 
-            "device_name" / Int8ub,
+            "device_name" / Int8ub,  # == 37
             "power_status" / Int8ub,
 
             "mode" / Int8ub,
@@ -59,11 +84,31 @@ class SetTimeResponse(Response):
     The response to the SetTimeRequest request
     """
 
+    packet_id = 15
+    device_name = 16
+
     def __init__(self):
         super().__init__(
-            "packet_id" / Int8ub,
-            "device_name" / Int8ub,
+            "packet_id" / Int8ub,  # == 15
+            "device_name" / Int8ub,  # == 16
             "success" / Int8ub,
+            "checksum" / Int8ub
+        )
+
+
+class SetPowerResponse(Response):
+    """
+    The empty response for a power request
+    """
+
+    packet_id = 15
+    device_name = 113
+
+    def __init__(self):
+        super().__init__(
+            "packet_id" / Int8ub,  # == 15
+            "device_name" / Int8ub,  # == 113
+            "state" / Int8ub,  # 35 == On, 36 == Off
             "checksum" / Int8ub
         )
 
@@ -73,12 +118,27 @@ class GetTimeResponse(Response):
     The response to the GetTimeRequest request
     """
 
+    packet_id = 15
+
+    unknown1 = 17
+    unknown2 = 20
+
+    year = -1
+    month = -1
+    day = -1
+    hour = -1
+    minute = -1
+    second = -1
+
+    dayofweek = -1
+    unknown3 = -1
+
     def __init__(self):
         super().__init__(
-            "packet_id" / Int8ub,
+            "packet_id" / Int8ub,  # == 15
 
-            "unknown1" / Int8ub,
-            "unknown2" / Int8ub,
+            "unknown1" / Int8ub,  # == 17
+            "unknown2" / Int8ub,  # == 20
 
             # add 2000 to this value to get the correct year
             "year" / Int8ub,
@@ -102,9 +162,9 @@ class GetTimerResponse(Response):
 
     def __init__(self):
         super().__init__(
-            "packet_id" / Int8ub,
+            "packet_id" / Int8ub,  # == 15
 
-            "unknown_begin_1" / Int8ub,
+            "unknown_begin_1" / Int8ub,  # == 34
 
             "is_active_1" / Int8ub,
 
