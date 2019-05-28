@@ -1,7 +1,12 @@
 import datetime
+import logging
 
-from sunix_ledstrip_controller_client.packets.responses import StatusResponse
+from sunix_ledstrip_controller_client.client import ApiClient
+from sunix_ledstrip_controller_client.packets.responses import StatusResponse, Response
 from sunix_ledstrip_controller_client.timer import Timer
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
 
 class Controller:
@@ -12,9 +17,6 @@ class Controller:
     import datetime
 
     # workaround for cyclic dependencies introduced by typing
-    from typing import TYPE_CHECKING
-    if TYPE_CHECKING:
-        from .client import LEDStripControllerClient
 
     from .functions import FunctionId
     from .packets import TransitionType
@@ -24,24 +26,24 @@ class Controller:
 
     DEFAULT_PORT = 5577
 
-    def __init__(self, api: 'LEDStripControllerClient', host: str, port: int = DEFAULT_PORT,
+    def __init__(self, host: str, port: int = DEFAULT_PORT,
                  hardware_id: str = None, model: str = None):
         """
         Creates a new controller device object
 
-        :param api: the api instance
         :param host: host address of the controller device
         :param port: the port on which the controller device is listening
         :param hardware_id: controller hardware_id (will be filled in by autodiscovery)
         :param model: controller model (will be filled in by autodiscovery)
         """
 
-        self._api = api
         self._host = host
         if not port:
             self._port = self.DEFAULT_PORT
         else:
             self._port = port
+
+        self._api = ApiClient(host, port, self._on_message_received)
 
         self._device_name = None
         self._hardware_id = hardware_id
@@ -52,26 +54,28 @@ class Controller:
         self._function = None
         self._function_speed = 255
 
-        self.update_state()
-
     def __str__(self):
-        return ("Host: %s\n" % (self.get_host()) +
-                "Port: %s\n" % (self.get_port()) +
-                "Device name: %s\n" % (self.get_device_name()) +
-                "Hardware ID: %s\n" % (self.get_hardware_id()) +
-                "Model: %s" % (self.get_model()))
+        return ("Host: %s\n" % self._host +
+                "Port: %s\n" % self._port +
+                "Device name: %s\n" % self._device_name +
+                "Hardware ID: %s\n" % self._hardware_id +
+                "Model: %s" % self._model)
 
     def connect(self):
         """
         Connects to the controller
         """
-        self._api.connect_socket(self._host, self._port)
+        self._api.connect()
+
+    def _on_message_received(self, message: Response):
+        if isinstance(message, StatusResponse):
+            self.update_state(message)
 
     def disconnect(self):
         """
         Disconnects from the controller
         """
-        self._api.disconnect_socket(self._host, self._port)
+        self._api.disconnect()
 
     def get_host(self) -> str or None:
         """
@@ -193,8 +197,8 @@ class Controller:
         :param warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-        state = self._api.set_ww(self._host, self._port, cold_white, warm_white)
-        self.update_state(state)
+        self._api.set_ww(self._host, self._port, cold_white, warm_white)
+        self.update_state()
 
     def get_brightness(self) -> int or None:
         """
@@ -216,7 +220,6 @@ class Controller:
 
         :param brightness: (0..255)
         """
-
         new_rgbww = []
         for color in self._rgbww:
             new_rgbww.append(color * (brightness / 255))
@@ -316,7 +319,8 @@ class Controller:
         :param state: the state to set (optional)
         """
         if state is None:
-            state = self._api.get_state(self._host, self._port)
+            self._api.get_state()
+            return
 
         # update the controller values from the response
         self._device_name = state.device_name

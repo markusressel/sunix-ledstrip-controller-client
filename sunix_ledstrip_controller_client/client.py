@@ -1,14 +1,13 @@
 """
-Example usage of the LEDStripControllerClient can be found in the example.py file
+Example usage of the ApiClient can be found in the example.py file
 """
 import datetime
 import logging
 import socket
-from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SO_BROADCAST
+import threading
 
-from sunix_ledstrip_controller_client.packets.responses import (Response, GetTimeResponse, GetTimerResponse,
-                                                                SetPowerResponse, SetTimeResponse, StatusResponse)
-from .controller import Controller
+from sunix_ledstrip_controller_client.packets.responses import (Response, StatusResponse, SetTimeResponse,
+                                                                GetTimeResponse, GetTimerResponse, SetPowerResponse)
 from .functions import FunctionId
 from .packets import TransitionType
 
@@ -17,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
-class LEDStripControllerClient:
+class ApiClient:
     """
     This class is the main interface for controlling devices
     """
@@ -25,110 +24,123 @@ class LEDStripControllerClient:
     _discovery_port = 48899
     _discovery_message = b'HF-A11ASSISTHREAD'
 
-    def __init__(self, keep_connections: bool = False):
+    def __init__(self, host: str, port: int, message_callback: callable):
         """
         Creates a new client object
-
-        :param keep_connections: if set to True tries to reuse the underlying socket for each controller as long
-                                  as possible, otherwise a new socket will be used for each request
         """
-        self._keep_connections = keep_connections
-        self._connections = {}
+        self._keep_connections = True
+        self._host = host
+        self._port = port
+        self._socket = None
+        self._incoming_message_thread = None
+        self._message_callback = message_callback
 
-    def discover_controllers(self) -> [Controller]:
+    def connect(self):
         """
-        Sends a broadcast message to the local network.
-        Listening devices will respond to this broadcast with their self description
-
-        :return: a list of devices
+        Connects to the controller
         """
-        discovered_controllers = []
+        self._connect_socket()
+        self._incoming_message_thread = threading.Thread(name='background', target=self._process_incoming_message)
+        self._incoming_message_thread.start()
 
-        cs = socket.socket(AF_INET, SOCK_DGRAM)
-        cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    def _process_incoming_message(self):
+        while self._socket is not None:
+            message = self._listen_for_incoming_message()
+            LOGGER.debug("Received: {}".format(message))
+            self._message_callback(message)
 
-        # send a local broadcast via udp with a "magic packet"
-        cs.sendto(self._discovery_message, ('255.255.255.255', self._discovery_port))
+    def reconnect(self):
+        """
+        Reconnects to the controller
+        """
+        LOGGER.debug("{}:{} Reconnecting...".format(self._host, self._port))
+        self.disconnect()
+        self.connect()
 
-        cs.setblocking(True)
-        cs.settimeout(1)
-        received_messages = []
-        try:
-            while True:
-                data, address = cs.recvfrom(4096)
-                received_messages.append(data.decode())
-
-        except socket.timeout:
-            if len(received_messages) <= 0:
-                return discovered_controllers
-
-        for message in received_messages:
-            try:
-                # parse received message
-                data = str.split(message, ",")
-
-                # check validity
-                if len(data) == 3:
-                    # extract data
-                    ip = data[0]
-                    hw_id = data[1]
-                    model = data[2]
-
-                    # create a Controller object representation
-                    controller = Controller(self, ip, Controller.DEFAULT_PORT, hw_id, model)
-                    LOGGER.debug(controller)
-                    print(controller)
-
-                    discovered_controllers.append(controller)
-            except:
-                LOGGER.error("Error parsing discovery message: {}".format(message))
-
-        return discovered_controllers
-
-    def connect_socket(self, host: str, port: int, reconnect: bool = False) -> socket:
+    def _connect_socket(self, reconnect: bool = False) -> socket:
         """
         Connects to the given host
-        :param host: target host address
-        :param port: target port
         :param reconnect: if True a new socket is created even if there is already an existing one,
                           otherwise an existing socket is reused
         :return: connected socket
         """
-        # TODO: NEEDS TESTING does the controller send updates even when changes from other clients occur?
-        connection_key = "{}:{}".format(host, port)
+        connection_key = "{}:{}".format(self._host, self._port)
         if reconnect:
-            self.disconnect_socket(host, port)
+            self.disconnect()
 
-        if connection_key not in self._connections:
+        if self._socket is None:
             LOGGER.debug("{} Connecting ...".format(connection_key))
-            s = socket.socket()
-            s.settimeout(1)
-            s.setblocking(True)
-            self._connections[connection_key] = s
-            s.connect((host, port))
+            self._socket = socket.socket()
+            self._socket.settimeout(1)
+            self._socket.setblocking(True)
+            self._socket.connect((self._host, self._port))
+
+        return self._socket
+
+    @staticmethod
+    def _get_response_instance(first: int, second: int) -> Response:
+        if first == 129 and second == 37:
+            return StatusResponse()
+        elif first == 15 and second == 16:
+            return SetTimeResponse()
+        elif first == 15 and second == 17:
+            return GetTimeResponse()
+        elif first == 15 and second == 34:
+            return GetTimerResponse()
+        elif first == 15 and second == 113:
+            return SetPowerResponse()
         else:
-            s = self._connections.get(connection_key)
+            raise AssertionError("Unknown response packet: {} {}".format(first, second))
 
-        return s
+    def _listen_for_incoming_message(self, response_length: int = 1) -> Response or bytes:
+        if response_length is not None and response_length > 0:
+            # at first always receive 2 bytes to detect response packet type and it's real length
+            length = 2
+            chunks = []
+            bytes_recd = 0
+            response_instance = None
+            while bytes_recd < length:
+                chunk = self._socket.recv(min(length - bytes_recd, 2048))
+                if chunk == b'':
+                    raise RuntimeError("socket connection broken")
+                chunks.append(chunk)
+                bytes_recd = bytes_recd + len(chunk)
 
-    def disconnect_socket(self, host: str, port: int):
+                if length == 2:
+                    response_instance = self._get_response_instance(chunk[0], chunk[1])
+                    length = response_instance.sizeof()
+
+            # combine received chunks
+            combined_bytes = b''.join(chunks)
+            response_instance.parse_data(combined_bytes)
+            LOGGER.debug(str(combined_bytes))
+            return response_instance
+        if response_length == -1:
+            return self._socket.recv(2048)
+
+    def disconnect(self):
         """
-        Disconnects from the given host
-        :param host: target host address
-        :param port: target port
+        Disconnects from the controller
         """
-        connection_key = "{}:{}".format(host, port)
-        LOGGER.debug("{} Disconnecting".format(connection_key))
-        if connection_key in self._connections:
-            s = self._connections[connection_key]
+        LOGGER.debug("{}:{} Disconnecting".format(self._host, self._port))
+        if self._socket is not None:
             try:
-                s.shutdown(socket.SHUT_RDWR)
-                s.close()
+                self._socket.shutdown(socket.SHUT_RDWR)
+                self._socket.close()
             except Exception as e:
+                LOGGER.warning(e)
                 pass
             finally:
-                self._connections.pop(connection_key, None)
+                self._socket = None
+
+        if self._incoming_message_thread is not None:
+            try:
+                self._incoming_message_thread.join()
+            except Exception as e:
+                LOGGER.warning(e)
+                pass
+            finally:
+                self._incoming_message_thread = None
 
     def get_time(self, host: str, port: int) -> Response:
         """
@@ -142,10 +154,8 @@ class LEDStripControllerClient:
         from .packets.requests import GetTimeRequest
 
         request = GetTimeRequest()
-
         data = request.get_data()
-        response = self._send_data(host, port, data)
-        return response
+        return self._send_data(data)
 
     def set_time(self, host: str, port: int, date_time: datetime) -> Response:
         """
@@ -160,24 +170,18 @@ class LEDStripControllerClient:
 
         request = SetTimeRequest()
         data = request.get_data(date_time)
+        return self._send_data(data)
 
-        response = self._send_data(host, port, data)
-        return response
-
-    def get_state(self, host: str, port: int) -> Response:
+    def get_state(self) -> Response:
         """
-        Updates the state of the passed in controller
-
-        :param host: controller host address
-        :param port: controller port
+        Requests a state update
         """
-        LOGGER.debug("{}:{} Retrieving state".format(host, port))
+        LOGGER.debug("{}:{} Requesting state update".format(self._host, self._port))
         from .packets.requests import StatusRequest
 
         request = StatusRequest()
-
         data = request.get_data()
-        return self._send_data(host, port, data)
+        return self._send_data(data)
 
     def turn_on(self, host: str, port: int) -> Response:
         """
@@ -191,8 +195,7 @@ class LEDStripControllerClient:
 
         request = SetPowerRequest()
         data = request.get_data(True)
-
-        return self._send_data(host, port, data)
+        return self._send_data(data)
 
     def turn_off(self, host: str, port: int) -> Response:
         """
@@ -206,8 +209,7 @@ class LEDStripControllerClient:
 
         request = SetPowerRequest()
         data = request.get_data(False)
-
-        return self._send_data(host, port, data)
+        return self._send_data(data)
 
     def set_rgbww(self, host: str, port: int, red: int, green: int, blue: int,
                   warm_white: int, cold_white: int) -> None:
@@ -229,8 +231,7 @@ class LEDStripControllerClient:
 
         request = UpdateColorRequest()
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
-
-        self._send_data(host, port, data, 0)
+        self._send_data(data, 0)
 
     def set_rgb(self, host: str, port: int, red: int, green: int, blue: int) -> None:
         """
@@ -249,8 +250,7 @@ class LEDStripControllerClient:
 
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
-
-        self._send_data(host, port, data, 0)
+        self._send_data(data, 0)
 
     def set_ww(self, host: str, port: int, warm_white: int, cold_white: int) -> None:
         """
@@ -268,8 +268,7 @@ class LEDStripControllerClient:
 
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
-
-        self._send_data(host, port, data, 0)
+        self._send_data(data, 0)
 
     @staticmethod
     def get_function_list() -> [FunctionId]:
@@ -278,7 +277,7 @@ class LEDStripControllerClient:
         """
         return list(FunctionId)
 
-    def set_function(self, host: str, port: int, function_id: FunctionId, speed: int) -> Response:
+    def set_function(self, host: str, port: int, function_id: FunctionId, speed: int) -> None:
         """
         Sets a function on the specified controller
 
@@ -292,11 +291,10 @@ class LEDStripControllerClient:
 
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
-
-        return self._send_data(host, port, data, 0)
+        self._send_data(data, 0)
 
     def set_custom_function(self, host: str, port: int, color_values: [(int, int, int, int)],
-                            speed: int, transition_type: TransitionType = TransitionType.Gradual) -> Response:
+                            speed: int, transition_type: TransitionType = TransitionType.Gradual) -> None:
 
         """
         Sets a custom function on the specified controller
@@ -316,10 +314,9 @@ class LEDStripControllerClient:
 
         request = SetCustomFunctionRequest()
         data = request.get_data(color_values, speed, transition_type)
+        self._send_data(data, 0)
 
-        return self._send_data(host, port, data, 0)  # TODO
-
-    def get_timers(self, host: str, port: int) -> Response:
+    def get_timers(self, host: str, port: int) -> None:
         """
         Receives the current timer configurations of the specified controller
 
@@ -331,72 +328,26 @@ class LEDStripControllerClient:
         from .packets.requests import GetTimerRequest
 
         request = GetTimerRequest()
-
         data = request.get_data()
-        return self._send_data(host, port, data)
+        return self._send_data(data)
 
-    def _send_data(self, host: str, port: int, data: bytes,
-                   response_size: int = 1) -> bytearray or None:
+    def _send_data(self, data: bytes, response_size: int = 1) -> Response or None:
         """
         Sends a binary data request to the specified host and port.
-        
-        :param host: destination host
-        :param port: destination port
         :param data: the binary(!) data to send
         """
-
-        from sunix_ledstrip_controller_client.packets.responses import Response
-
-        def get_response_instance(first: int, second: int) -> Response:
-            if first == 129 and second == 37:
-                return StatusResponse()
-            elif first == 15 and second == 16:
-                return SetTimeResponse()
-            elif first == 15 and second == 17:
-                return GetTimeResponse()
-            elif first == 15 and second == 34:
-                return GetTimerResponse()
-            elif first == 15 and second == 113:
-                return SetPowerResponse()
-            else:
-                raise AssertionError("Unknown response packet: {} {}".format(first, second))
-
-        def receive_response(length: int) -> Response or bytes:
-            if length is not None and length > 0:
-                # at first always receive 2 bytes to detect response packet type and it's real length
-                length = 2
-                chunks = []
-                bytes_recd = 0
-                response_instance = None
-                while bytes_recd < length:
-                    chunk = s.recv(min(length - bytes_recd, 2048))
-                    if chunk == b'':
-                        raise RuntimeError("socket connection broken")
-                    chunks.append(chunk)
-                    bytes_recd = bytes_recd + len(chunk)
-
-                    if length == 2:
-                        response_instance = get_response_instance(chunk[0], chunk[1])
-                        length = response_instance.sizeof()
-
-                # combine received chunks
-                combined_bytes = b''.join(chunks)
-                response_instance.parse_data(combined_bytes)
-                return response_instance
-            if length == -1:
-                return s.recv(2048)
 
         reconnect = not self._keep_connections
         for i in range(3):
             try:
                 if self._keep_connections:
-                    s = self.connect_socket(host, port, reconnect)
+                    s = self._connect_socket(reconnect)
                     s.send(data)
-                    return receive_response(response_size)
+                    return self._listen_for_incoming_message(response_size)
                 else:
-                    with self.connect_socket(host, port, reconnect) as s:
+                    with self._connect_socket(reconnect) as s:
                         s.send(data)
-                        return receive_response(response_size)
+                        return self._listen_for_incoming_message(response_size)
             except socket.error as e:
                 reconnect = True
 

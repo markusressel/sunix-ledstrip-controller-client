@@ -1,46 +1,72 @@
-from sunix_ledstrip_controller_client import LEDStripControllerClient, FunctionId, TransitionType
+import time
+from datetime import datetime
+
+from sunix_ledstrip_controller_client import TransitionType
 from sunix_ledstrip_controller_client.controller import Controller
 
-api = LEDStripControllerClient(keep_connections=True)
 
-device = Controller(api, "192.168.2.33")
+def main():
+    device1 = Controller("192.168.2.33")
+    device1.connect()
 
-device.connect()
+    device1.turn_off()
 
-# device.update_state()
-# device.update_state()
-#
-# device.turn_off()
-#
-# device.update_state()
-#
-# device.turn_on()
-# device.set_function(FunctionId.BLUE_GRADUAL_CHANGE, 100)
-time = device.get_time()
+    time_1 = device1.get_time()
 
-device.disconnect()
+    device1.set_rgb(5, 5, 5)
+    device1.set_rgb(5, 5, 5)
+    device1.set_rgb(5, 5, 5)
+    device1.set_rgb(5, 5, 5)
+    device1.set_rgb(5, 5, 5)
+    device1.set_rgb(5, 5, 5)
 
-device.set_function(FunctionId.NO_FUNCTION, 2)
+    device1.turn_off()
+    device1.turn_on()
+    device1.turn_on()
 
-device.turn_on()
-device.set_rgb(5, 5, 5)
-device.set_rgb(0, 5, 5)
-device.set_rgb(5, 0, 5)
-device.set_rgb(5, 5, 0)
+    dt = datetime.now()
+    device1.set_time(dt)
+    device1.update_state()
+    time_1 = device1.get_time()
+    device1.set_time(time_1)
 
-colors = [(255, 0, 0, 255),
-          (0, 255, 0),
-          (0, 0, 255)]
-device.set_ww(0, 0)
-device.set_custom_function(colors, 250, TransitionType.Gradual)
-device.set_custom_function(colors, 250, TransitionType.Gradual)
-device.set_custom_function(colors, 250, TransitionType.Gradual)
-device.set_custom_function(colors, 250, TransitionType.Gradual)
+    device1.set_rgb(5, 5, 5)
 
-device.update_state()
-device.update_state()
+    device1.set_rgb(5, 5, 5)
+    device1.turn_on()
+    device1.turn_on()
 
-device.turn_off()
+    device1.set_rgb(5, 5, 5)
+    device1.update_state()
+    device1.set_rgb(0, 5, 5)
+    device1.update_state()
+    device1.set_rgb(5, 0, 5)
+    device1.update_state()
+    device1.set_rgb(5, 5, 0)
 
-device.update_state()
-device.update_state()
+    colors = [(255, 0, 0, 255),
+              (0, 255, 0),
+              (0, 0, 255)]
+    device1.set_ww(0, 0)
+    device1.set_custom_function(colors, 250, TransitionType.Gradual)
+    device1.set_custom_function(colors, 250, TransitionType.Gradual)
+    device1.update_state()
+    device1.set_custom_function(colors, 250, TransitionType.Gradual)
+    device1.set_custom_function(colors, 250, TransitionType.Gradual)
+
+    device1.update_state()
+    device1.turn_off()
+    device1.update_state()
+
+    dt = datetime.now()
+    device1.set_time(dt)
+    device1.update_state()
+    time_1 = device1.get_time()
+    device1.set_time(time_1)
+
+    timers = device1.get_timers()
+
+
+if __name__ == "__main__":
+    main()
+    time.sleep(60)
