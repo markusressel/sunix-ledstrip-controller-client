@@ -367,7 +367,7 @@ class LEDStripControllerClient:
                 length = 2
                 chunks = []
                 bytes_recd = 0
-                response_instance: Response = None
+                response_instance = None
                 while bytes_recd < length:
                     chunk = s.recv(min(length - bytes_recd, 2048))
                     if chunk == b'':
