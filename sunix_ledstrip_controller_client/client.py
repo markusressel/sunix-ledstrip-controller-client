@@ -35,6 +35,8 @@ class ApiClient:
         self._message_callback = message_callback
 
         self._received_messages = Queue()
+        self._lock = threading.Lock()
+        self._expect_response_types = {}
 
     def connect(self, reconnect: bool = False):
         """
@@ -67,7 +69,16 @@ class ApiClient:
                 LOGGER.debug("Received: {}".format(message))
                 if self._message_callback is not None:
                     self._message_callback(message)
-                self._received_messages.put(message)
+
+                with self._lock:
+                    response_type = type(message)
+                    if response_type in self._expect_response_types:
+                        amount = self._expect_response_types[response_type]
+                        if amount <= 1:
+                            self._expect_response_types.pop(response_type, None)
+                        else:
+                            self._expect_response_types[response_type] -= 1
+                        self._received_messages.put(message)
 
     def reconnect(self):
         """
@@ -144,6 +155,17 @@ class ApiClient:
             finally:
                 self._incoming_message_thread = None
 
+    def _expect_response(self, type: type):
+        """
+        Indicates to the message thread that a response of the given type is expected
+        :param type: the response type
+        """
+        with self._lock:
+            if type in self._expect_response_types:
+                self._expect_response_types[type] += 1
+            else:
+                self._expect_response_types[type] = 1
+
     def _find_first_response(self, type):
         timeout = 5
         start = datetime.datetime.now()
@@ -165,6 +187,7 @@ class ApiClient:
         LOGGER.debug("{}:{} Retrieving time".format(self._host, self._port))
         from .packets.requests import GetTimeRequest
 
+        self._expect_response(GetTimeResponse)
         request = GetTimeRequest()
         data = request.get_data()
         self._send_data(data)
@@ -179,6 +202,7 @@ class ApiClient:
         LOGGER.debug("{}:{} Updating time".format(self._host, self._port))
         from .packets.requests import SetTimeRequest
 
+        self._expect_response(SetTimeResponse)
         request = SetTimeRequest()
         data = request.get_data(date_time)
         self._send_data(data)
@@ -191,6 +215,7 @@ class ApiClient:
         LOGGER.debug("{}:{} Requesting state update".format(self._host, self._port))
         from .packets.requests import StatusRequest
 
+        self._expect_response(StatusResponse)
         request = StatusRequest()
         data = request.get_data()
         self._send_data(data)
@@ -203,6 +228,7 @@ class ApiClient:
         LOGGER.debug("{}:{} Turning on".format(self._host, self._port))
         from .packets.requests import SetPowerRequest
 
+        self._expect_response(SetPowerResponse)
         request = SetPowerRequest()
         data = request.get_data(True)
         self._send_data(data)
@@ -215,6 +241,7 @@ class ApiClient:
         LOGGER.debug("{}:{} Turning off".format(self._host, self._port))
         from .packets.requests import SetPowerRequest
 
+        self._expect_response(SetPowerResponse)
         request = SetPowerRequest()
         data = request.get_data(False)
         self._send_data(data)
@@ -324,6 +351,7 @@ class ApiClient:
         LOGGER.debug("{}:{} Retrieving timers".format(self._host, self._port))
         from .packets.requests import GetTimerRequest
 
+        self._expect_response(GetTimerResponse)
         request = GetTimerRequest()
         data = request.get_data()
         self._send_data(data)
