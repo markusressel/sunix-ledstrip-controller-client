@@ -322,8 +322,7 @@ class Controller:
         :param state: the state to set (optional)
         """
         if state is None:
-            self._api.get_state()
-            return
+            state = self._api.get_state()
 
         # update the controller values from the response
         self._device_name = state.device_name

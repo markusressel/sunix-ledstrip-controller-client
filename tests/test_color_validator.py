@@ -7,7 +7,7 @@ class TestColorValidatorMethods(unittest.TestCase):
         Checks if the color validator accepts a valid color
         """
 
-        from sunix_ledstrip_controller_client import LEDStripControllerClient
+        from sunix_ledstrip_controller_client import ApiClient
         from random import randint
 
         # check a bunch of random values
@@ -21,14 +21,14 @@ class TestColorValidatorMethods(unittest.TestCase):
             # convert to tuple
             color = tuple(color)
             # validate
-            LEDStripControllerClient._validate_color(color, len(color))
+            ApiClient._validate_color(color, len(color))
 
     def test_color_invalid_size(self):
         """
         Checks if the color validator detects an unexpected color channel size
         """
 
-        from sunix_ledstrip_controller_client import LEDStripControllerClient
+        from sunix_ledstrip_controller_client import ApiClient
         from random import randint
 
         # check a bunch of random values
@@ -43,14 +43,14 @@ class TestColorValidatorMethods(unittest.TestCase):
             color = tuple(color)
             # validate
             with self.assertRaises(ValueError):
-                LEDStripControllerClient._validate_color(color, len(color) + 1)
+                ApiClient._validate_color(color, len(color) + 1)
 
     def test_color_invalid_color_channel_value(self):
         """
         Checks if the color validator detects an invalid color channel value
         """
 
-        from sunix_ledstrip_controller_client import LEDStripControllerClient
+        from sunix_ledstrip_controller_client import ApiClient
         from random import randint
 
         # check a bunch of random values
@@ -74,7 +74,7 @@ class TestColorValidatorMethods(unittest.TestCase):
             # only validate colors that we know have invalid channel values
             if invalid is True:
                 with self.assertRaises(ValueError):
-                    LEDStripControllerClient._validate_color(color, len(color))
+                    ApiClient._validate_color(color, len(color))
 
 
 if __name__ == '__main__':
