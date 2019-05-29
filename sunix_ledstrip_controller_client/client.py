@@ -3,6 +3,7 @@ Example usage of the ApiClient can be found in the example.py file
 """
 import datetime
 import logging
+import queue
 import socket
 import threading
 from queue import Queue
@@ -22,10 +23,7 @@ class ApiClient:
     This class is the main interface for controlling devices
     """
 
-    _discovery_port = 48899
-    _discovery_message = b'HF-A11ASSISTHREAD'
-
-    def __init__(self, host: str, port: int, message_callback: callable):
+    def __init__(self, host: str, port: int, message_callback: callable = None):
         """
         Creates a new client object
         """
@@ -38,38 +36,12 @@ class ApiClient:
 
         self._received_messages = Queue()
 
-    def connect(self):
+    def connect(self, reconnect: bool = False):
         """
         Connects to the controller
-        """
-        self._connect_socket()
-        self._incoming_message_thread = threading.Thread(name='background',
-                                                         target=self._process_incoming_message,
-                                                         daemon=True)
-        self._incoming_message_thread.start()
 
-    def _process_incoming_message(self):
-        while self._socket is not None:
-            message = self._listen_for_incoming_message()
-            if message is not None:
-                LOGGER.debug("Received: {}".format(message))
-                self._message_callback(message)
-                self._received_messages.put(message)
-
-    def reconnect(self):
-        """
-        Reconnects to the controller
-        """
-        LOGGER.debug("{}:{} Reconnecting...".format(self._host, self._port))
-        self.disconnect()
-        self.connect()
-
-    def _connect_socket(self, reconnect: bool = False) -> socket:
-        """
-        Connects to the given host
         :param reconnect: if True a new socket is created even if there is already an existing one,
                           otherwise an existing socket is reused
-        :return: connected socket
         """
         connection_key = "{}:{}".format(self._host, self._port)
         if reconnect:
@@ -82,7 +54,28 @@ class ApiClient:
             self._socket.setblocking(True)
             self._socket.connect((self._host, self._port))
 
-        return self._socket
+        if self._incoming_message_thread is None:
+            self._incoming_message_thread = threading.Thread(name='background',
+                                                             target=self._process_incoming_message,
+                                                             daemon=True)
+            self._incoming_message_thread.start()
+
+    def _process_incoming_message(self):
+        while self._socket is not None:
+            message = self._listen_for_incoming_message()
+            if message is not None:
+                LOGGER.debug("Received: {}".format(message))
+                if self._message_callback is not None:
+                    self._message_callback(message)
+                self._received_messages.put(message)
+
+    def reconnect(self):
+        """
+        Reconnects to the controller
+        """
+        LOGGER.debug("{}:{} Reconnecting...".format(self._host, self._port))
+        self.disconnect()
+        self.connect()
 
     @staticmethod
     def _get_response_instance(first: int, second: int) -> Response:
@@ -152,20 +145,24 @@ class ApiClient:
                 self._incoming_message_thread = None
 
     def _find_first_response(self, type):
-        while True:
-            response = self._received_messages.get(block=True)
-            if isinstance(response, type):
-                return response
+        timeout = 5
+        start = datetime.datetime.now()
+        try:
+            while (datetime.datetime.now() - start).seconds < timeout:
+                response = self._received_messages.get(block=True, timeout=timeout)
+                if isinstance(response, type):
+                    return response
+        except queue.Empty as e:
+            raise ValueError(
+                "Expected response of type {} was not received within {} seconds".format(type, timeout))
 
-    def get_time(self, host: str, port: int) -> Response:
+    def get_time(self) -> Response:
         """
         Receives the current time of the specified controller
 
-        :param host: controller host address
-        :param port: controller port
         :return: the current time of the controller
         """
-        LOGGER.debug("{}:{} Retrieving time".format(host, port))
+        LOGGER.debug("{}:{} Retrieving time".format(self._host, self._port))
         from .packets.requests import GetTimeRequest
 
         request = GetTimeRequest()
@@ -173,15 +170,13 @@ class ApiClient:
         self._send_data(data)
         return self._find_first_response(GetTimeResponse)
 
-    def set_time(self, host: str, port: int, date_time: datetime) -> Response:
+    def set_time(self, date_time: datetime) -> Response:
         """
         Sets the internal time of the controller
 
-        :param host: controller host address
-        :param port: controller port
         :param date_time: the time to set
         """
-        LOGGER.debug("{}:{} Updating time".format(host, port))
+        LOGGER.debug("{}:{} Updating time".format(self._host, self._port))
         from .packets.requests import SetTimeRequest
 
         request = SetTimeRequest()
@@ -201,14 +196,11 @@ class ApiClient:
         self._send_data(data)
         return self._find_first_response(StatusResponse)
 
-    def turn_on(self, host: str, port: int) -> Response:
+    def turn_on(self) -> Response:
         """
         Turns on a controller
-
-        :param host: controller host address
-        :param port: controller port
         """
-        LOGGER.debug("{}:{} Turning on".format(host, port))
+        LOGGER.debug("{}:{} Turning on".format(self._host, self._port))
         from .packets.requests import SetPowerRequest
 
         request = SetPowerRequest()
@@ -216,14 +208,11 @@ class ApiClient:
         self._send_data(data)
         return self._find_first_response(SetPowerResponse)
 
-    def turn_off(self, host: str, port: int) -> Response:
+    def turn_off(self) -> Response:
         """
         Turns on a controller
-
-        :param host: controller host address
-        :param port: controller port
         """
-        LOGGER.debug("{}:{} Turning off".format(host, port))
+        LOGGER.debug("{}:{} Turning off".format(self._host, self._port))
         from .packets.requests import SetPowerRequest
 
         request = SetPowerRequest()
@@ -231,20 +220,18 @@ class ApiClient:
         self._send_data(data)
         return self._find_first_response(SetPowerResponse)
 
-    def set_rgbww(self, host: str, port: int, red: int, green: int, blue: int,
+    def set_rgbww(self, red: int, green: int, blue: int,
                   warm_white: int, cold_white: int) -> None:
         """
         Sets rgbww values for the specified controller.
 
-        :param host: controller host address
-        :param port: controller port
         :param red: red intensity (0..255)
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
         :param warm_white: warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-        LOGGER.debug("{}:{} Updating rgbww".format(host, port))
+        LOGGER.debug("{}:{} Updating rgbww".format(self._host, self._port))
         self._validate_color((red, green, blue, warm_white, cold_white), 5)
 
         from .packets.requests import UpdateColorRequest
@@ -253,17 +240,15 @@ class ApiClient:
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
         self._send_data(data)
 
-    def set_rgb(self, host: str, port: int, red: int, green: int, blue: int) -> None:
+    def set_rgb(self, red: int, green: int, blue: int) -> None:
         """
         Sets rgbw values for the specified controller.
 
-        :param host: controller host address
-        :param port: controller port
         :param red: red intensity (0..255)
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
         """
-        LOGGER.debug("{}:{} Updating rgb".format(host, port))
+        LOGGER.debug("{}:{} Updating rgb".format(self._host, self._port))
         self._validate_color((red, green, blue), 3)
 
         from .packets.requests import UpdateColorRequest
@@ -272,16 +257,14 @@ class ApiClient:
         data = request.get_rgb_data(red, green, blue)
         self._send_data(data)
 
-    def set_ww(self, host: str, port: int, warm_white: int, cold_white: int) -> None:
+    def set_ww(self, warm_white: int, cold_white: int) -> None:
         """
         Sets warm white and cold white values for the specified controller.
 
-        :param host: controller host address
-        :param port: controller port
         :param warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-        LOGGER.debug("{}:{} Updating ww".format(host, port))
+        LOGGER.debug("{}:{} Updating ww".format(self._host, self._port))
         self._validate_color((warm_white, cold_white), 2)
 
         from .packets.requests import UpdateColorRequest
@@ -297,36 +280,32 @@ class ApiClient:
         """
         return list(FunctionId)
 
-    def set_function(self, host: str, port: int, function_id: FunctionId, speed: int) -> None:
+    def set_function(self, function_id: FunctionId, speed: int) -> None:
         """
         Sets a function on the specified controller
 
-        :param host: controller host address
-        :param port: controller port
         :param function_id: Function ID
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
-        LOGGER.debug("{}:{} Updating function".format(host, port))
+        LOGGER.debug("{}:{} Updating function".format(self._host, self._port))
         from .packets.requests import SetFunctionRequest
 
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
         self._send_data(data)
 
-    def set_custom_function(self, host: str, port: int, color_values: [(int, int, int, int)],
+    def set_custom_function(self, color_values: [(int, int, int, int)],
                             speed: int, transition_type: TransitionType = TransitionType.Gradual) -> None:
 
         """
         Sets a custom function on the specified controller
 
-        :param host: controller host address
-        :param port: controller port
         :param color_values: a list of up to 16 color tuples of the form (red, green, blue) or (red, green, blue, unknown).
                              I couldn't figure out what the last parameter is used for so the rgb is a shortcut.
         :param transition_type: the transition type between colors
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
-        LOGGER.debug("{}:{} Updating custom function".format(host, port))
+        LOGGER.debug("{}:{} Updating custom function".format(self._host, self._port))
         for color in color_values:
             self._validate_color(color, len(color))
 
@@ -336,15 +315,13 @@ class ApiClient:
         data = request.get_data(color_values, speed, transition_type)
         self._send_data(data)
 
-    def get_timers(self, host: str, port: int) -> None:
+    def get_timers(self) -> Response:
         """
         Receives the current timer configurations of the specified controller
 
-        :param host: controller host address
-        :param port: controller port
         :return: the current timer configuration of the controller
         """
-        LOGGER.debug("{}:{} Retrieving timers".format(host, port))
+        LOGGER.debug("{}:{} Retrieving timers".format(self._host, self._port))
         from .packets.requests import GetTimerRequest
 
         request = GetTimerRequest()
@@ -361,11 +338,11 @@ class ApiClient:
         reconnect = not self._keep_connections
         for i in range(3):
             try:
+                self.connect(reconnect)
                 if self._keep_connections:
-                    s = self._connect_socket(reconnect)
-                    s.send(data)
+                    self._socket.send(data)
                 else:
-                    with self._connect_socket(reconnect) as s:
+                    with self._socket as s:
                         s.send(data)
                 return
             except socket.error as e:

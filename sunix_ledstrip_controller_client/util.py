@@ -7,8 +7,11 @@ from .controller import Controller
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
+_discovery_port = 48899
+_discovery_message = b'HF-A11ASSISTHREAD'
 
-def discover_controllers(self) -> [Controller]:
+
+def discover_controllers() -> [Controller]:
     """
     Sends a broadcast message to the local network.
     Listening devices will respond to this broadcast with their self description
@@ -22,7 +25,7 @@ def discover_controllers(self) -> [Controller]:
     cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
     # send a local broadcast via udp with a "magic packet"
-    cs.sendto(self._discovery_message, ('255.255.255.255', self._discovery_port))
+    cs.sendto(_discovery_message, ('255.255.255.255', _discovery_port))
 
     cs.setblocking(True)
     cs.settimeout(1)

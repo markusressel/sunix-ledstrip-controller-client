@@ -1,11 +1,7 @@
 from sunix_ledstrip_controller_client import Controller
-from sunix_ledstrip_controller_client import LEDStripControllerClient
 from sunix_ledstrip_controller_client import TransitionType
 
-api = LEDStripControllerClient()
-# devices = api.discover_controllers()
-
-device = Controller(api, "192.168.2.37")
+device = Controller("192.168.2.37")
 
 # create a list of color-channel tuples
 colors = [(255, 0, 0, 255),

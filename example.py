@@ -1,12 +1,12 @@
 import time
 
 from sunix_ledstrip_controller_client import Controller
-from sunix_ledstrip_controller_client import LEDStripControllerClient
+from sunix_ledstrip_controller_client.util import discover_controllers
 
-api = LEDStripControllerClient()
-devices = api.discover_controllers()
+devices = discover_controllers()
 
-device = Controller(api, "192.168.2.37")
+device = Controller("192.168.2.33")
+device.connect()
 
 
 def color_test():

@@ -112,7 +112,7 @@ class Controller:
         """
         :return: the current time of this controller
         """
-        response = self._api.get_time(self._host, self._port)
+        response = self._api.get_time()
 
         if (response.year is 0
                 and response.month is 0
@@ -138,7 +138,7 @@ class Controller:
 
         :param date_time: the time to set
         """
-        self._api.set_time(self._host, self._port, date_time)
+        self._api.set_time(date_time)
 
     def is_on(self) -> bool:
         """
@@ -150,14 +150,14 @@ class Controller:
         """
         Turn on this controller
         """
-        self._api.turn_on(self._host, self._port)
+        self._api.turn_on()
         self.update_state()
 
     def turn_off(self) -> None:
         """
         Turn on this controller
         """
-        self._api.turn_off(self._host, self._port)
+        self._api.turn_off()
         self.update_state()
 
     def get_rgbww(self) -> (int, int, int, int, int) or None:
@@ -177,7 +177,7 @@ class Controller:
         :param warm_white: warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-        self._api.set_rgbww(self._host, self._port, red, green, blue, warm_white, cold_white)
+        self._api.set_rgbww(red, green, blue, warm_white, cold_white)
         self.update_state()
 
     def set_rgb(self, red: int, green: int, blue: int) -> None:
@@ -188,7 +188,7 @@ class Controller:
         :param green: green intensity (0..255)
         :param blue: blue intensity (0..255)
         """
-        self._api.set_rgb(self._host, self._port, red, green, blue)
+        self._api.set_rgb(red, green, blue)
         self.update_state()
 
     def set_ww(self, warm_white: int, cold_white: int) -> None:
@@ -198,7 +198,7 @@ class Controller:
         :param warm_white: warm white intensity (0..255)
         :param cold_white: cold white intensity (0..255)
         """
-        self._api.set_ww(self._host, self._port, cold_white, warm_white)
+        self._api.set_ww(cold_white, warm_white)
         self.update_state()
 
     def get_brightness(self) -> int or None:
@@ -234,7 +234,7 @@ class Controller:
         :param function_id: Function ID
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
-        self._api.set_function(self._host, self._port, function_id, speed)
+        self._api.set_function(function_id, speed)
         self.update_state()
 
     def set_custom_function(self, color_values: [(int, int, int, int)],
@@ -250,7 +250,7 @@ class Controller:
         :param transition_type: the transition type between colors
         :param speed: function speed [0..255] 0 is slow, 255 is fast
         """
-        self._api.set_custom_function(self._host, self._port, color_values, speed, transition_type)
+        self._api.set_custom_function(color_values, speed, transition_type)
         self.update_state()
 
     def get_timers(self) -> [Timer]:
@@ -287,7 +287,7 @@ class Controller:
             # TODO
             return mode
 
-        timers_data = self._api.get_timers(self._host, self._port)
+        timers_data = self._api.get_timers()
 
         timers = []
         for idx in range(1, 7):
