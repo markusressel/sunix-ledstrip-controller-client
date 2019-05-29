@@ -6,7 +6,6 @@ from sunix_ledstrip_controller_client.util import discover_controllers
 devices = discover_controllers()
 
 device = Controller("192.168.2.33")
-device.connect()
 
 
 def color_test():
