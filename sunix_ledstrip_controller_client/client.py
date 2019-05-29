@@ -5,6 +5,7 @@ import datetime
 import logging
 import socket
 import threading
+from queue import Queue
 
 from sunix_ledstrip_controller_client.packets.responses import (Response, StatusResponse, SetTimeResponse,
                                                                 GetTimeResponse, GetTimerResponse, SetPowerResponse)
@@ -35,6 +36,8 @@ class ApiClient:
         self._incoming_message_thread = None
         self._message_callback = message_callback
 
+        self._received_messages = Queue()
+
     def connect(self):
         """
         Connects to the controller
@@ -46,8 +49,10 @@ class ApiClient:
     def _process_incoming_message(self):
         while self._socket is not None:
             message = self._listen_for_incoming_message()
-            LOGGER.debug("Received: {}".format(message))
-            self._message_callback(message)
+            if message is not None:
+                LOGGER.debug("Received: {}".format(message))
+                self._message_callback(message)
+                self._received_messages.put(message)
 
     def reconnect(self):
         """
@@ -102,7 +107,10 @@ class ApiClient:
             while bytes_recd < length:
                 chunk = self._socket.recv(min(length - bytes_recd, 2048))
                 if chunk == b'':
-                    raise RuntimeError("socket connection broken")
+                    if self._socket is not None:
+                        self.reconnect()
+                    else:
+                        return None
                 chunks.append(chunk)
                 bytes_recd = bytes_recd + len(chunk)
 
@@ -125,13 +133,12 @@ class ApiClient:
         LOGGER.debug("{}:{} Disconnecting".format(self._host, self._port))
         if self._socket is not None:
             try:
-                self._socket.shutdown(socket.SHUT_RDWR)
-                self._socket.close()
+                s = self._socket
+                self._socket = None
+                s.shutdown(socket.SHUT_RDWR)
+                s.close()
             except Exception as e:
                 LOGGER.warning(e)
-                pass
-            finally:
-                self._socket = None
 
         if self._incoming_message_thread is not None:
             try:
@@ -141,6 +148,12 @@ class ApiClient:
                 pass
             finally:
                 self._incoming_message_thread = None
+
+    def _find_first_response(self, type):
+        while True:
+            response = self._received_messages.get(block=True)
+            if isinstance(response, type):
+                return response
 
     def get_time(self, host: str, port: int) -> Response:
         """
@@ -155,7 +168,8 @@ class ApiClient:
 
         request = GetTimeRequest()
         data = request.get_data()
-        return self._send_data(data)
+        self._send_data(data)
+        return self._find_first_response(GetTimeResponse)
 
     def set_time(self, host: str, port: int, date_time: datetime) -> Response:
         """
@@ -170,7 +184,8 @@ class ApiClient:
 
         request = SetTimeRequest()
         data = request.get_data(date_time)
-        return self._send_data(data)
+        self._send_data(data)
+        return self._find_first_response(SetTimeResponse)
 
     def get_state(self) -> Response:
         """
@@ -181,7 +196,8 @@ class ApiClient:
 
         request = StatusRequest()
         data = request.get_data()
-        return self._send_data(data)
+        self._send_data(data)
+        return self._find_first_response(StatusResponse)
 
     def turn_on(self, host: str, port: int) -> Response:
         """
@@ -195,7 +211,8 @@ class ApiClient:
 
         request = SetPowerRequest()
         data = request.get_data(True)
-        return self._send_data(data)
+        self._send_data(data)
+        return self._find_first_response(SetPowerResponse)
 
     def turn_off(self, host: str, port: int) -> Response:
         """
@@ -209,7 +226,8 @@ class ApiClient:
 
         request = SetPowerRequest()
         data = request.get_data(False)
-        return self._send_data(data)
+        self._send_data(data)
+        return self._find_first_response(SetPowerResponse)
 
     def set_rgbww(self, host: str, port: int, red: int, green: int, blue: int,
                   warm_white: int, cold_white: int) -> None:
@@ -231,7 +249,7 @@ class ApiClient:
 
         request = UpdateColorRequest()
         data = request.get_rgbww_data(red, green, blue, warm_white, cold_white)
-        self._send_data(data, 0)
+        self._send_data(data)
 
     def set_rgb(self, host: str, port: int, red: int, green: int, blue: int) -> None:
         """
@@ -250,7 +268,7 @@ class ApiClient:
 
         request = UpdateColorRequest()
         data = request.get_rgb_data(red, green, blue)
-        self._send_data(data, 0)
+        self._send_data(data)
 
     def set_ww(self, host: str, port: int, warm_white: int, cold_white: int) -> None:
         """
@@ -268,7 +286,7 @@ class ApiClient:
 
         request = UpdateColorRequest()
         data = request.get_ww_data(warm_white, cold_white)
-        self._send_data(data, 0)
+        self._send_data(data)
 
     @staticmethod
     def get_function_list() -> [FunctionId]:
@@ -291,7 +309,7 @@ class ApiClient:
 
         request = SetFunctionRequest()
         data = request.get_data(function_id, speed)
-        self._send_data(data, 0)
+        self._send_data(data)
 
     def set_custom_function(self, host: str, port: int, color_values: [(int, int, int, int)],
                             speed: int, transition_type: TransitionType = TransitionType.Gradual) -> None:
@@ -314,7 +332,7 @@ class ApiClient:
 
         request = SetCustomFunctionRequest()
         data = request.get_data(color_values, speed, transition_type)
-        self._send_data(data, 0)
+        self._send_data(data)
 
     def get_timers(self, host: str, port: int) -> None:
         """
@@ -329,9 +347,10 @@ class ApiClient:
 
         request = GetTimerRequest()
         data = request.get_data()
-        return self._send_data(data)
+        self._send_data(data)
+        return self._find_first_response(GetTimerResponse)
 
-    def _send_data(self, data: bytes, response_size: int = 1) -> Response or None:
+    def _send_data(self, data: bytes) -> Response or None:
         """
         Sends a binary data request to the specified host and port.
         :param data: the binary(!) data to send
@@ -343,11 +362,10 @@ class ApiClient:
                 if self._keep_connections:
                     s = self._connect_socket(reconnect)
                     s.send(data)
-                    return self._listen_for_incoming_message(response_size)
                 else:
                     with self._connect_socket(reconnect) as s:
                         s.send(data)
-                        return self._listen_for_incoming_message(response_size)
+                return
             except socket.error as e:
                 reconnect = True
 

@@ -1,4 +1,3 @@
-import time
 from datetime import datetime
 
 from sunix_ledstrip_controller_client import TransitionType
@@ -65,8 +64,8 @@ def main():
     device1.set_time(time_1)
 
     timers = device1.get_timers()
+    device1.disconnect()
 
 
 if __name__ == "__main__":
     main()
-    time.sleep(60)
