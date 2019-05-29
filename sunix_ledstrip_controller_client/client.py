@@ -43,7 +43,9 @@ class ApiClient:
         Connects to the controller
         """
         self._connect_socket()
-        self._incoming_message_thread = threading.Thread(name='background', target=self._process_incoming_message)
+        self._incoming_message_thread = threading.Thread(name='background',
+                                                         target=self._process_incoming_message,
+                                                         daemon=True)
         self._incoming_message_thread.start()
 
     def _process_incoming_message(self):

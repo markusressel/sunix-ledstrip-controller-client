@@ -66,6 +66,7 @@ class Controller:
         Connects to the controller
         """
         self._api.connect()
+        self.update_state()
 
     def _on_message_received(self, message: Response):
         if isinstance(message, StatusResponse):
