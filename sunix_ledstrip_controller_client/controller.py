@@ -2,7 +2,7 @@ import datetime
 import logging
 
 from sunix_ledstrip_controller_client.client import ApiClient
-from sunix_ledstrip_controller_client.packets.responses import StatusResponse, Response
+from sunix_ledstrip_controller_client.packets.responses import StatusResponse, Response, SetPowerResponse
 from sunix_ledstrip_controller_client.timer import Timer
 
 LOGGER = logging.getLogger(__name__)
@@ -71,6 +71,8 @@ class Controller:
     def _on_message_received(self, message: Response):
         if isinstance(message, StatusResponse):
             self.update_state(message)
+        elif isinstance(message, SetPowerResponse):
+            self._power_state = message.state
 
     def disconnect(self):
         """

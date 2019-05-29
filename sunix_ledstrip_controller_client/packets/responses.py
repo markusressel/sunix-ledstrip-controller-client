@@ -103,6 +103,7 @@ class SetPowerResponse(Response):
 
     packet_id = 15
     device_name = 113
+    state = -1
 
     def __init__(self):
         super().__init__(
