@@ -16,8 +16,6 @@ class Controller:
 
     import datetime
 
-    # workaround for cyclic dependencies introduced by typing
-
     from .functions import FunctionId
     from .packets import TransitionType
 
@@ -61,6 +59,16 @@ class Controller:
                 "Hardware ID: %s\n" % self._hardware_id +
                 "Model: %s" % self._model)
 
+    def __hash__(self):
+        return hash((self._host, self._port, self._device_name, self._hardware_id, self._model))
+
+    def __eq__(self, other):
+        return ((other is not None)
+                and (self._host == other.get_host())
+                and (self._port == other.get_port())
+                and (self._device_name == other.get_device_name())
+                and (self._hardware_id == other.get_hardware_id()))
+
     def connect(self):
         """
         Connects to the controller
@@ -82,13 +90,13 @@ class Controller:
 
     def get_host(self) -> str or None:
         """
-        :return: The IP/Host address of this device  
+        :return: The IP/Host address of this device
         """
         return self._host
 
     def get_port(self) -> int:
         """
-        :return: The port of this device 
+        :return: The port of this device
         """
         return self._port
 
@@ -100,13 +108,13 @@ class Controller:
 
     def get_hardware_id(self) -> str or None:
         """
-        :return: The hardware ID of this device (f.ex. 'F0FE6B2333C6') 
+        :return: The hardware ID of this device (f.ex. 'F0FE6B2333C6')
         """
         return self._hardware_id
 
     def get_model(self) -> str or None:
         """
-        :return: The model of this device 
+        :return: The model of this device
         """
         return self._model
 
@@ -241,7 +249,6 @@ class Controller:
 
     def set_custom_function(self, color_values: [(int, int, int, int)],
                             speed: int, transition_type: TransitionType = TransitionType.Gradual):
-
         """
         Sets a custom function on this controller
 
