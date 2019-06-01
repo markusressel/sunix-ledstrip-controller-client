@@ -167,7 +167,7 @@ class ApiClient:
                 self._expect_response_types[type] = 1
 
     def _find_first_response(self, type):
-        timeout = 5
+        timeout = 1
         start = datetime.datetime.now()
         try:
             while (datetime.datetime.now() - start).seconds < timeout:
