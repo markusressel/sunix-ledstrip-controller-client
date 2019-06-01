@@ -26,7 +26,7 @@ class Controller:
 
     DEFAULT_PORT = 5577
 
-    def __init__(self, host: str, port: int = DEFAULT_PORT,
+    def __init__(self, host: str, port: int = None,
                  hardware_id: str = None, model: str = None):
         """
         Creates a new controller device object
@@ -38,7 +38,7 @@ class Controller:
         """
 
         self._host = host
-        if not port:
+        if port is None:
             self._port = self.DEFAULT_PORT
         else:
             self._port = port
