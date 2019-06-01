@@ -41,7 +41,7 @@ class Controller:
         else:
             self._port = port
 
-        self._api = ApiClient(host, port, self._on_message_received)
+        self._api = ApiClient(self._host, self._port, self._on_message_received)
 
         self._device_name = None
         self._hardware_id = hardware_id
