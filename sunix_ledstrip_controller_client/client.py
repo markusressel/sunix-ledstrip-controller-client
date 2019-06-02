@@ -367,7 +367,7 @@ class ApiClient:
                         s.send(data)
                         return self._find_first_response(expected_response_type)
             except Exception as e:
-                if i == retry_count:
+                if i >= retry_count - 1:
                     raise e
                 LOGGER.warning("Retrying because of error: {}".format(e))
                 if isinstance(e, socket.error):
