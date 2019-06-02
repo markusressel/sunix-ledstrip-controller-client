@@ -354,8 +354,9 @@ class ApiClient:
         if expected_response_type is not None:
             self._expect_response(expected_response_type)
 
+        retry_count = 5
         reconnect = not self._keep_connections
-        for i in range(5):
+        for i in range(retry_count):
             try:
                 self.connect(reconnect)
                 if self._keep_connections:
@@ -366,7 +367,7 @@ class ApiClient:
                         s.send(data)
                         return self._find_first_response(expected_response_type)
             except Exception as e:
-                if i == 2:
+                if i == retry_count:
                     raise e
                 LOGGER.warning("Retrying because of error: {}".format(e))
                 if isinstance(e, socket.error):
