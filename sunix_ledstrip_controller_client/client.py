@@ -6,8 +6,8 @@ import logging
 import queue
 import socket
 import threading
-from queue import Queue
 
+from sunix_ledstrip_controller_client.blocking_circular_buffer import BlockingCircularBuffer
 from sunix_ledstrip_controller_client.packets.responses import (Response, StatusResponse, SetTimeResponse,
                                                                 GetTimeResponse, GetTimerResponse, SetPowerResponse)
 from .functions import FunctionId
@@ -34,9 +34,9 @@ class ApiClient:
         self._incoming_message_thread = None
         self._message_callback = message_callback
 
-        self._received_messages = Queue()
         self._lock = threading.Lock()
-        self._expect_response_types = {}
+        # maps from response_type -> BlockingCircularBuffer of messages of that type
+        self._expected_response_messages = {}
 
     def connect(self, reconnect: bool = False):
         """
@@ -72,13 +72,9 @@ class ApiClient:
 
                 with self._lock:
                     response_type = type(message)
-                    if response_type in self._expect_response_types:
-                        amount = self._expect_response_types[response_type]
-                        if amount <= 1:
-                            self._expect_response_types.pop(response_type, None)
-                        else:
-                            self._expect_response_types[response_type] -= 1
-                        self._received_messages.put(message)
+                    if response_type in self._expected_response_messages:
+                        received_messages = self._expected_response_messages[response_type]
+                        received_messages.put(message)
 
     def reconnect(self):
         """
@@ -155,28 +151,32 @@ class ApiClient:
             finally:
                 self._incoming_message_thread = None
 
-    def _expect_response(self, type: type):
+    def _expect_response(self, response_type: type):
         """
         Indicates to the message thread that a response of the given type is expected
-        :param type: the response type
+        :param response_type: the response type
         """
         with self._lock:
-            if type in self._expect_response_types:
-                self._expect_response_types[type] += 1
-            else:
-                self._expect_response_types[type] = 1
+            if response_type not in self._expected_response_messages:
+                self._expected_response_messages[response_type] = BlockingCircularBuffer()
 
-    def _find_first_response(self, type):
-        timeout = 1
-        start = datetime.datetime.now()
+    def _find_first_response(self, response_type: type, timeout: float = None) -> Response or None:
+        """
+        Waits for a response of the given type blocking if necessary.
+        :param response_type: the expected type of the response message
+        :param timeout: the maximum amount of time to wait for a response
+        :return: the response message
+        """
+        if response_type is None:
+            return None
+        if timeout is None:
+            timeout = 0.5
+
         try:
-            while (datetime.datetime.now() - start).seconds < timeout:
-                response = self._received_messages.get(block=True, timeout=timeout)
-                if isinstance(response, type):
-                    return response
+            return self._expected_response_messages[response_type].popleft(timeout=timeout)
         except queue.Empty as e:
             raise ValueError(
-                "Expected response of type {} was not received within {} seconds".format(type, timeout))
+                "Expected response of type {} was not received within {} seconds".format(response_type, timeout))
 
     def get_time(self) -> Response:
         """
@@ -187,11 +187,9 @@ class ApiClient:
         LOGGER.debug("{}:{} Retrieving time".format(self._host, self._port))
         from .packets.requests import GetTimeRequest
 
-        self._expect_response(GetTimeResponse)
         request = GetTimeRequest()
         data = request.get_data()
-        self._send_data(data)
-        return self._find_first_response(GetTimeResponse)
+        return self._send_data(data, expected_response_type=GetTimeResponse)
 
     def set_time(self, date_time: datetime) -> Response:
         """
@@ -202,11 +200,9 @@ class ApiClient:
         LOGGER.debug("{}:{} Updating time".format(self._host, self._port))
         from .packets.requests import SetTimeRequest
 
-        self._expect_response(SetTimeResponse)
         request = SetTimeRequest()
         data = request.get_data(date_time)
-        self._send_data(data)
-        return self._find_first_response(SetTimeResponse)
+        return self._send_data(data, expected_response_type=SetTimeResponse)
 
     def get_state(self) -> Response:
         """
@@ -215,11 +211,9 @@ class ApiClient:
         LOGGER.debug("{}:{} Requesting state update".format(self._host, self._port))
         from .packets.requests import StatusRequest
 
-        self._expect_response(StatusResponse)
         request = StatusRequest()
         data = request.get_data()
-        self._send_data(data)
-        return self._find_first_response(StatusResponse)
+        return self._send_data(data, expected_response_type=StatusResponse)
 
     def turn_on(self) -> Response:
         """
@@ -228,11 +222,9 @@ class ApiClient:
         LOGGER.debug("{}:{} Turning on".format(self._host, self._port))
         from .packets.requests import SetPowerRequest
 
-        self._expect_response(SetPowerResponse)
         request = SetPowerRequest()
         data = request.get_data(True)
-        self._send_data(data)
-        return self._find_first_response(SetPowerResponse)
+        return self._send_data(data, expected_response_type=SetPowerResponse)
 
     def turn_off(self) -> Response:
         """
@@ -241,11 +233,9 @@ class ApiClient:
         LOGGER.debug("{}:{} Turning off".format(self._host, self._port))
         from .packets.requests import SetPowerRequest
 
-        self._expect_response(SetPowerResponse)
         request = SetPowerRequest()
         data = request.get_data(False)
-        self._send_data(data)
-        return self._find_first_response(SetPowerResponse)
+        return self._send_data(data, expected_response_type=SetPowerResponse)
 
     def set_rgbww(self, red: int, green: int, blue: int,
                   warm_white: int, cold_white: int) -> None:
@@ -351,30 +341,36 @@ class ApiClient:
         LOGGER.debug("{}:{} Retrieving timers".format(self._host, self._port))
         from .packets.requests import GetTimerRequest
 
-        self._expect_response(GetTimerResponse)
         request = GetTimerRequest()
         data = request.get_data()
-        self._send_data(data)
-        return self._find_first_response(GetTimerResponse)
+        return self._send_data(data, expected_response_type=GetTimerResponse)
 
-    def _send_data(self, data: bytes) -> Response or None:
+    def _send_data(self, data: bytes, expected_response_type: type = None) -> Response or None:
         """
         Sends a binary data request to the specified host and port.
         :param data: the binary(!) data to send
         """
 
+        if expected_response_type is not None:
+            self._expect_response(expected_response_type)
+
         reconnect = not self._keep_connections
-        for i in range(3):
+        for i in range(5):
             try:
                 self.connect(reconnect)
                 if self._keep_connections:
                     self._socket.send(data)
+                    return self._find_first_response(expected_response_type)
                 else:
                     with self._socket as s:
                         s.send(data)
-                return
-            except socket.error as e:
-                reconnect = True
+                        return self._find_first_response(expected_response_type)
+            except Exception as e:
+                if i == 2:
+                    raise e
+                LOGGER.warning("Retrying because of error: {}".format(e))
+                if isinstance(e, socket.error):
+                    reconnect = True
 
     @staticmethod
     def _validate_color(color: (int, int, int), color_channels: int) -> None:
