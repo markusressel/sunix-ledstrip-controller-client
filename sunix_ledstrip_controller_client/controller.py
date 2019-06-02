@@ -167,8 +167,7 @@ class Controller:
         """
         Turn on this controller
         """
-        self._api.turn_off()
-        response = self._api.turn_on()
+        response = self._api.turn_off()
         self._power_state = response.state
 
     def get_rgbww(self) -> (int, int, int, int, int) or None:
