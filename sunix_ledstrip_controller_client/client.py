@@ -170,7 +170,7 @@ class ApiClient:
         if response_type is None:
             return None
         if timeout is None:
-            timeout = 0.5
+            timeout = 1
 
         try:
             return self._expected_response_messages[response_type].popleft(timeout=timeout)
@@ -354,7 +354,7 @@ class ApiClient:
         if expected_response_type is not None:
             self._expect_response(expected_response_type)
 
-        retry_count = 5
+        retry_count = 3
         reconnect = not self._keep_connections
         for i in range(retry_count):
             try:
