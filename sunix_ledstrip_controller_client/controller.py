@@ -160,15 +160,16 @@ class Controller:
         """
         Turn on this controller
         """
-        self._api.turn_on()
-        self.update_state()
+        response = self._api.turn_on()
+        self._power_state = response.state
 
     def turn_off(self) -> None:
         """
         Turn on this controller
         """
         self._api.turn_off()
-        self.update_state()
+        response = self._api.turn_on()
+        self._power_state = response.state
 
     def get_rgbww(self) -> (int, int, int, int, int) or None:
         """
