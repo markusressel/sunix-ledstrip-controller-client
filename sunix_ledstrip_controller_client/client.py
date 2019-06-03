@@ -134,8 +134,7 @@ class ApiClient:
                 if chunk == b'':
                     if self._socket is not None:
                         self.reconnect()
-                    else:
-                        return None
+                    return None
                 chunks.append(chunk)
                 bytes_recd = bytes_recd + len(chunk)
 
