@@ -18,6 +18,30 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
+class IncomingMessageThread(threading.Thread):
+    """
+    Thread that executed the target function in a loop until stopped
+    """
+    _is_running = False
+
+    def start(self):
+        self._is_running = True
+        super().start()
+
+    def run(self):
+        try:
+            if self._target:
+                while self._is_running:
+                    self._target(*self._args, **self._kwargs)
+        finally:
+            # Avoid a refcycle if the thread is running a function with
+            # an argument that has a member that points to the thread.
+            del self._target, self._args, self._kwargs
+
+    def stop(self):
+        self._is_running = False
+
+
 class ApiClient:
     """
     This class is the main interface for controlling devices
@@ -57,24 +81,23 @@ class ApiClient:
             self._socket.connect((self._host, self._port))
 
         if self._incoming_message_thread is None:
-            self._incoming_message_thread = threading.Thread(name='background',
-                                                             target=self._process_incoming_message,
-                                                             daemon=True)
+            self._incoming_message_thread = IncomingMessageThread(name='incoming_messages',
+                                                                  target=self._process_incoming_message,
+                                                                  daemon=True)
             self._incoming_message_thread.start()
 
     def _process_incoming_message(self):
-        while self._socket is not None:
-            message = self._listen_for_incoming_message()
-            if message is not None:
-                LOGGER.debug("Received: {}".format(message))
-                if self._message_callback is not None:
-                    self._message_callback(message)
+        message = self._listen_for_incoming_message()
+        if message is not None:
+            LOGGER.debug("Received: {}".format(message))
+            if self._message_callback is not None:
+                self._message_callback(message)
 
-                with self._lock:
-                    response_type = type(message)
-                    if response_type in self._expected_response_messages:
-                        received_messages = self._expected_response_messages[response_type]
-                        received_messages.put(message)
+            with self._lock:
+                response_type = type(message)
+                if response_type in self._expected_response_messages:
+                    received_messages = self._expected_response_messages[response_type]
+                    received_messages.put(message)
 
     def reconnect(self):
         """
@@ -143,8 +166,12 @@ class ApiClient:
                 LOGGER.warning(e)
 
         if self._incoming_message_thread is not None:
+            self._incoming_message_thread.stop()
             try:
-                self._incoming_message_thread.join()
+                if threading.current_thread().name == self._incoming_message_thread.name:
+                    pass
+                else:
+                    self._incoming_message_thread.join()
             except Exception as e:
                 LOGGER.warning(e)
                 pass
