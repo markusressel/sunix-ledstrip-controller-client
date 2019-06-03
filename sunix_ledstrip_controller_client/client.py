@@ -139,7 +139,7 @@ class ApiClient:
                 chunks.append(chunk)
                 bytes_recd = bytes_recd + len(chunk)
 
-                if length == 2:
+                if length == 2 and len(chunk) >= length:
                     response_instance = self._get_response_instance(chunk[0], chunk[1])
                     length = response_instance.sizeof()
 
