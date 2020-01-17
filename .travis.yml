@@ -3,12 +3,12 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-  - "3.7-dev"
-  - "nightly" # currently points to 3.7-dev
-# command to install dependencies
+  - "3.7"
+  - "3.8"
 install:
   - pip install .
-  #- pip install -r requirements.txt
-# command to run tests
 script:
   - nosetests
+env:
+  global:
+    secure: 94dV94Bgl4wXZD2oikKd/FofvCpMSwshZhu7rnY1+69oxwovwWGTLZsZyN5b22aqOuPXSfQL98+0+bBLhWgojshWoXMm1kaTHQoz8JRZRYxOxBq5QLOL7rz5Uz2FOlimmpXv/sOpi7p9gyi890XzdgD2XVfLxkknj5fMUw0/5UqVEBoJ/OrAzZw3IrTn4AwTHgU0j9inKll4D2uW0A7U44lNxTy/vXf6DiN5xuPHssswT7ZdiJJnCWwBzq8byGMZP/6pGcsZgW7qQYlyXeggT71DzyDix7oOj7HF4kXr4+s0ihWrNx/eE3iheW5Kuf/k/SlLLrWZ9bLqbReZGaMuwFUSNhiH+vQpwXa8ocOR8KoOr+c01xzkaSQzuFpKbIRrcc8ANXDIOSru+gUJ9U5gpWp/Oi89LB1mxWDqrbl+G8AwCf+KPElW3VSasXyrNSFFny+aY3Prst7sb1bibWdPzVohGqjfKPO37DIRJ7AFjkLVeFknjr1yksa2CpSjocrA3glN6c3E0RqLYKtmC8CvJsg7HgkQA1NLbagML4Kqpcungm7KlUdVZF3yjl7qkNtAUJR6yyNHsCEhbhPkZrO8ATDNFyz5xVmYXjlnhLXwdihrTtaqgifGFb0XnGZYbSvT+prrQQz/juIE6YRNKGbyeIknvcg6ShtAW5ngvpIzq2E=
