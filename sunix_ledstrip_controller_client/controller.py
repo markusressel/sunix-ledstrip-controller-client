@@ -99,12 +99,12 @@ class Controller:
         """
         response = self._api.get_time(self._host, self._port)
 
-        if (response["year"] is 0
-                and response["month"] is 0
-                and response["day"] is 0
-                and response["hour"] is 0
-                and response["minute"] is 0
-                and response["second"] is 0):
+        if (response["year"] == 0
+                and response["month"] == 0
+                and response["day"] == 0
+                and response["hour"] == 0
+                and response["minute"] == 0
+                and response["second"] == 0):
             return None
         else:
             dt = datetime.datetime(

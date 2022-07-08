@@ -60,12 +60,12 @@ class TestColorValidatorMethods(unittest.TestCase):
             # append random color channel values
             for c in range(randint(2, 4)):
                 r = randint(-1, 1)
-                if r is -1:
+                if r == -1:
                     color.append(randint(-999, -1))
                     invalid = True
-                if r is 0:
+                if r == 0:
                     color.append(randint(0, 255))
-                if r is 1:
+                if r == 1:
                     color.append(randint(256, 999))
                     invalid = True
 

@@ -74,7 +74,7 @@ class TestFunctionMethods(unittest.TestCase):
             # generate color values
             color_values = []
             for i in range(randint(1, 16)):
-                if randint(3, 4) is 3:
+                if randint(3, 4) == 3:
                     color_tuple = (randint(0, 255), randint(0, 255), randint(0, 255))
                 else:
                     color_tuple = (randint(0, 255), randint(0, 255), randint(0, 255), randint(0, 255))

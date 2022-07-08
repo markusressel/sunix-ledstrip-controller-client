@@ -479,7 +479,7 @@ class SetCustomFunctionRequest(Request):
             raise ValueError("Only up to 16 color states are supported! You provided %d :(" % len(colors))
 
         for color in colors:
-            if len(color) is not 3 and len(color) is not 4:
+            if len(color) != 3 and len(color) != 4:
                 raise ValueError("Unexpected tuple size %d in color %s! Expected: 3 or 4" % (len(color), str(color)))
 
         if speed < 0 or speed > 255:
