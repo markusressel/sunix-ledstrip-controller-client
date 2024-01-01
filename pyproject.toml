@@ -40,4 +40,4 @@ construct = "*"
 typing = "*"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.4.3"
+pytest = "^7.4.4"
