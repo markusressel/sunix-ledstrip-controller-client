@@ -4,7 +4,7 @@
 sunix-ledstrip-controller-client  |pypi_version|
 ================================================
 
-A python 3.7+ library for controlling the Sunix® RGB / RGBWWCW WiFi LED Strip controller.
+A python 3.10+ library for controlling the Sunix® RGB / RGBWWCW WiFi LED Strip controller.
 
 Build Status
 ============

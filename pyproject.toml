@@ -34,10 +34,10 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.7"  # Compatible python versions must be declared here
+python = "^3.10"  # Compatible python versions must be declared here
 
 construct = "*"
 typing = "*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"
