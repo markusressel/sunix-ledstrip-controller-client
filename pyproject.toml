@@ -39,5 +39,5 @@ python = "^3.10"  # Compatible python versions must be declared here
 construct = "*"
 typing = "*"
 
-[poetry.group.dev.dependencies]
+[tool.poetry.group.test.dependencies]
 pytest = "^7.4.4"
